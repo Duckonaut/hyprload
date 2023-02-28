@@ -1,6 +1,14 @@
 # Hyprload
 A (WIP) minimal [Hyprland](https://github.com/hyprwm/Hyprland) plugin manager
 
+# Features
+- [x] Loading plugins
+- [x] Reloading plugins
+- [ ] Installing and updating plugins automatically
+    - [ ] A unified plugin manifest format
+    - [ ] Installing from git
+    - [ ] Installing from a url
+
 # Installing
 Since Hyprland plugins don't have ABI guarantees, you *should* download the Hyprland source and compile it if you plan to use plugins.
 This ensures the compiler version is the same between the Hyprland build you're running, and the plugins you are using.
