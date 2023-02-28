@@ -21,7 +21,9 @@ The guide on compiling and installing Hyprland manually is on the [wiki](http://
 2. Install `hyprload`
     - `make install`
 3. Add this to your config to initialize `hyprload`
-    - `exec-once=hyprctl plugin load $HOME/.local/share/hyprload/hyprload.so`
+    - `exec-once=$HOME/.local/share/hyprload/hyprload.sh`
 
 # Usage
-Put plugin builds you'd like to use into the `~/.local/share/hyprload/plugins/bin` directory. `hyprload` will load them automatically
+Put plugin builds you'd like to use into the `~/.local/share/hyprload/plugins/bin` directory. `hyprload` will load them automatically.
+
+Hyprload keeps "sessions" of plugins, meaning that changing the plugins in `bin` (for example, updating them) does not require a full restart of Hyprload. The original unload will be called, the old plugin will be discarded, the new plugin copy will be loaded.

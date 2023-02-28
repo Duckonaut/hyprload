@@ -6,13 +6,20 @@ PLUGIN_NAME=hyprload
 
 SOURCE_FILES=$(wildcard src/*.cpp)
 
+INSTALL_PATH=${HOME}/.local/share/hyprload/
+
 .PHONY: clean clangd
 
 all: check_env $(PLUGIN_NAME).so
 
 install: all
-	mkdir -p ${HOME}/.local/share/hyprload/plugins/bin
-	cp $(PLUGIN_NAME).so ${HOME}/.local/share/hyprload/
+	mkdir -p $(INSTALL_PATH)/plugins/bin
+	cp $(PLUGIN_NAME).sh $(INSTALL_PATH)
+	@if [ -f "$(INSTALL_PATH)/$(PLUGIN_NAME).so" ]; then\
+		cp $(PLUGIN_NAME).so "$(INSTALL_PATH)/$(PLUGIN_NAME).so.update";\
+	else\
+		cp $(PLUGIN_NAME).so $(INSTALL_PATH);\
+	fi
 
 check_env:
 ifndef HYPRLAND_HEADERS
@@ -23,7 +30,7 @@ $(PLUGIN_NAME).so: $(SOURCE_FILES) $(INCLUDE_FILES)
 	g++ -shared -fPIC --no-gnu-unique $(SOURCE_FILES) -o $(PLUGIN_NAME).so -g -I "/usr/include/pixman-1" -I "/usr/include/libdrm" -I "${HYPRLAND_HEADERS}" -Iinclude -std=c++23
 
 clean:
-	rm ./examplePlugin.so
+	rm $(PLUGIN_NAME).so
 
 clangd:
 	printf "%b" "-I/usr/include/pixman-1\n-I/usr/include/libdrm\n-I${HYPRLAND_HEADERS}\n-Iinclude\n-std=c++2b" > compile_flags.txt
