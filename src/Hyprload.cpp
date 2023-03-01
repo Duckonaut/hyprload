@@ -1,22 +1,46 @@
 #include "HyprloadOverlay.hpp"
 #include "globals.hpp"
 
-#include "Hyprload.hpp"
-#include "src/helpers/Monitor.hpp"
-#include "src/plugins/PluginSystem.hpp"
-#include <cstdlib>
-#include <ctime>
+#include <Hyprload.hpp>
+#include <src/helpers/Monitor.hpp>
+#include <src/plugins/PluginSystem.hpp>
 #include <src/config/ConfigManager.hpp>
 #include <src/plugins/PluginAPI.hpp>
 
 #include <time.h>
 #include <random>
+#include <fstream>
+#include <cstdlib>
+#include <ctime>
+
+extern "C" {
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+}
 
 namespace hyprload {
     std::filesystem::path getRootPath() {
         SConfigValue* hyprloadRoot = HyprlandAPI::getConfigValue(PHANDLE, c_pluginRoot);
 
         return std::filesystem::path(hyprloadRoot->strValue);
+    }
+
+    std::optional<std::filesystem::path> getHyprlandHeadersPath() {
+        SConfigValue* hyprloadHeaders = HyprlandAPI::getConfigValue(PHANDLE, c_hyprlandHeaders);
+
+        if (hyprloadHeaders->strValue.empty()) {
+            return std::nullopt;
+        }
+
+        return std::filesystem::path(hyprloadHeaders->strValue);
+    }
+
+    std::filesystem::path getConfigPath() {
+        SConfigValue* hyprloadConfig = HyprlandAPI::getConfigValue(PHANDLE, c_pluginConfig);
+
+        return std::filesystem::path(hyprloadConfig->strValue);
     }
 
     std::filesystem::path getPluginsPath() {
@@ -86,9 +110,27 @@ namespace hyprload {
         std::filesystem::path sourcePluginPath = getPluginBinariesPath();
         std::filesystem::path sessionPluginPath = getSessionBinariesPath().value();
 
+        while (std::filesystem::exists(sessionPluginPath)) {
+            debug("Session plugin path already exists, possible guid collision, regenerating guid...");
+
+            m_sSessionGuid = generateSessionGuid();
+
+            debug("Session guid: " + m_sSessionGuid.value());
+
+            sessionPluginPath = getSessionBinariesPath().value();
+        }
+
         debug("Creating session plugin path: " + sessionPluginPath.string());
 
         std::filesystem::create_directories(sessionPluginPath);
+
+        debug("Creating lock file...");
+
+        if (!lockSession()) {
+            debug("Failed to create lock file, something is seriously wrong, will not load plugins...");
+
+            return;
+        }
 
         debug("Copying plugins...");
 
@@ -147,6 +189,10 @@ namespace hyprload {
 
         m_vPlugins.clear();
 
+        debug("Removing lock file...");
+
+        unlockSession();
+
         std::filesystem::remove_all(sessionPluginPath);
 
         m_sSessionGuid = std::nullopt;
@@ -184,4 +230,112 @@ namespace hyprload {
         return getPluginsPath() / ("session." + m_sSessionGuid.value());
     }
 
+    bool Hyprload::lockSession() {
+        std::filesystem::path lockFile = getSessionBinariesPath().value() / "lock";
+
+        m_iSessionLock = tryCreateLock(lockFile);
+
+        if (!m_iSessionLock.has_value()) {
+            debug("Lock file already exists, and is locked. Possible session guid collision, retry");
+
+            return false;
+        } else if (m_iSessionLock.value() == -1) {
+            debug("Failed to create lock file, something is seriously wrong, will not load plugins...");
+
+            return false;
+        }
+
+        return true;
+    }
+
+    void Hyprload::unlockSession() {
+        std::filesystem::path lockFile = getSessionBinariesPath().value() / "lock";
+
+        if (m_iSessionLock.has_value()) {
+            releaseLock(m_iSessionLock.value());
+        }
+
+        if (std::filesystem::exists(lockFile)) {
+            std::filesystem::remove(lockFile);
+        }
+    }
+
+    std::optional<int> tryCreateLock(const std::filesystem::path& lockFile) {
+        mode_t oldMask = umask(0);
+        int fd = open(lockFile.c_str(), O_RDWR | O_CREAT | O_EXCL, 0666);
+        umask(oldMask);
+
+        if (fd < 0) {
+            close(fd);
+            return -1;
+        }
+
+        int lock = flock(fd, LOCK_EX | LOCK_NB);
+
+        if (lock < 0) {
+            close(fd);
+            return std::nullopt;
+        }
+
+        return fd;
+    }
+
+    std::optional<int> tryGetLock(const std::filesystem::path& lockFile) {
+        int fd = open(lockFile.c_str(), O_RDWR);
+
+        if (fd < 0) {
+            close(fd);
+            return std::nullopt;
+        }
+
+        int lock = flock(fd, LOCK_EX | LOCK_NB);
+
+        if (lock < 0) {
+            close(fd);
+            return std::nullopt;
+        }
+
+        return fd;
+    }
+
+    void releaseLock(int lock) {
+        if (lock < 0) {
+            return;
+        }
+
+        flock(lock, LOCK_UN);
+    }
+
+    void tryCleanupPreviousSessions() {
+        std::filesystem::path pluginsPath = getPluginsPath();
+
+        for (const auto& entry : std::filesystem::directory_iterator(pluginsPath)) {
+            std::string sessionPath = entry.path().filename();
+            if (sessionPath.find("session.") != std::string::npos) {
+                debug("Found previous session: " + sessionPath);
+
+                std::filesystem::path lockFile = entry.path() / "lock";
+                if (std::filesystem::exists(lockFile)) {
+                    std::optional<int> lock = tryGetLock(lockFile);
+
+                    if (!lock.has_value()) {
+                        debug("Lock file exists, and is locked, skipping session: " + sessionPath);
+                    } else if (lock.value() == -1) {
+                        debug("Failed to get lock file, something is wrong...");
+
+                        releaseLock(lock.value());
+                        std::filesystem::remove_all(entry.path());
+                    } else {
+                        debug("Lock file exists, but is not locked (possible crash without unloading), removing session: " + sessionPath);
+
+                        releaseLock(lock.value());
+                        std::filesystem::remove_all(entry.path());
+                    }
+                } else {
+                    debug("Lock file does not exist, removing session: " + sessionPath);
+                    std::filesystem::remove_all(entry.path());
+                }
+            }
+        }
+    }
 }

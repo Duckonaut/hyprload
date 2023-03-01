@@ -39,20 +39,27 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     hyprload::g_pHyprload = std::make_unique<hyprload::Hyprload>();
     hyprload::g_pOverlay = std::make_unique<hyprload::HyprloadOverlay>();
 
-    std::string defaultPluginDir = getenv("HOME") + std::string("/.local/share/hyprload/");
+    std::string home = getenv("HOME");
+    std::string defaultPluginDir = home + std::string("/.local/share/hyprload/");
+    std::string defaultConfigPath = home + std::string("/.config/hypr/hyprload.toml");
 
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginRoot, SConfigValue{.strValue = defaultPluginDir});
+    HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginConfig, SConfigValue{.strValue = defaultConfigPath});
+    HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_hyprlandHeaders, SConfigValue{.strValue = ""});
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginQuiet, SConfigValue{.intValue = 0});
-    HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginDebug, SConfigValue{.intValue = 0});
+    HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginDebug, SConfigValue{.intValue = 1});
 
     HyprlandAPI::addDispatcher(PHANDLE, "hyprload", hyprloadDispatcher);
 
-    g_pRenderAllClientsForMonitorHook =
-        HyprlandAPI::createFunctionHook(PHANDLE, (void*)&CHyprRenderer::renderAllClientsForMonitor, (void*)&hkRenderAllClientsForMonitor);
+    g_pRenderAllClientsForMonitorHook = HyprlandAPI::createFunctionHook(PHANDLE, (void*)&CHyprRenderer::renderAllClientsForMonitor, (void*)&hkRenderAllClientsForMonitor);
 
     g_pRenderAllClientsForMonitorHook->hook();
 
     HyprlandAPI::reloadConfig();
+
+    hyprload::log("Cleaning up old sessions...");
+
+    hyprload::tryCleanupPreviousSessions();
 
     hyprload::log("Initialized successfully!");
 
@@ -62,7 +69,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     hyprload::log("Plugins loaded!");
 
-    return {"hyprload", "Minimal hyprland plugin manager", "Duckonaut", "0.2.1"};
+    return {"hyprload", "Minimal hyprland plugin manager", "Duckonaut", "0.3.0"};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
