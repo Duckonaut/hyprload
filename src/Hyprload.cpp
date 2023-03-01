@@ -1,12 +1,20 @@
+#include "HyprloadOverlay.hpp"
 #include "globals.hpp"
 
 #include "Hyprload.hpp"
+#include "src/helpers/Monitor.hpp"
+#include "src/plugins/PluginSystem.hpp"
+#include <cstdlib>
+#include <ctime>
 #include <src/config/ConfigManager.hpp>
 #include <src/plugins/PluginAPI.hpp>
 
+#include <time.h>
+#include <random>
+
 namespace hyprload {
     std::filesystem::path getRootPath() {
-        static SConfigValue* hyprloadRoot = HyprlandAPI::getConfigValue(PHANDLE, c_pluginRoot);
+        SConfigValue* hyprloadRoot = HyprlandAPI::getConfigValue(PHANDLE, c_pluginRoot);
 
         return std::filesystem::path(hyprloadRoot->strValue);
     }
@@ -20,14 +28,13 @@ namespace hyprload {
     }
 
     bool isQuiet() {
-        static SConfigValue* hyprloadQuiet = HyprlandAPI::getConfigValue(PHANDLE, c_pluginQuiet);
+        SConfigValue* hyprloadQuiet = HyprlandAPI::getConfigValue(PHANDLE, c_pluginQuiet);
 
         return hyprloadQuiet->intValue;
-        ;
     }
 
     bool isDebug() {
-        static SConfigValue* hyprloadDebug = HyprlandAPI::getConfigValue(PHANDLE, c_pluginDebug);
+        SConfigValue* hyprloadDebug = HyprlandAPI::getConfigValue(PHANDLE, c_pluginDebug);
 
         return hyprloadDebug->intValue;
     }
@@ -40,17 +47,15 @@ namespace hyprload {
 
     void debug(const std::string& message) {
         if (isDebug()) {
-            HyprlandAPI::addNotification(PHANDLE, "[hyprload] " + message, s_debugColor, 5000);
+            std::string debugMessage = "[hyprload] " + message;
+            HyprlandAPI::addNotification(PHANDLE, debugMessage, s_debugColor, 5000);
+            Debug::log(LOG, (' ' + debugMessage).c_str());
         }
     }
 
     Hyprload::Hyprload() {
         m_sSessionGuid = std::nullopt;
         m_vPlugins = std::vector<std::string>();
-    }
-
-    Hyprload::~Hyprload() {
-        clearPlugins();
     }
 
     void Hyprload::dispatch(const std::string& command) {
@@ -60,6 +65,9 @@ namespace hyprload {
             clearPlugins();
         } else if (command == "reload") {
             reloadPlugins();
+        } else if (command == "overlay") {
+            log("Toggling overlay...");
+            g_pOverlay->m_bDrawOverlay = !g_pOverlay->m_bDrawOverlay;
         } else {
             log("Unknown command: " + command);
         }
@@ -73,29 +81,39 @@ namespace hyprload {
 
         m_sSessionGuid = generateSessionGuid();
 
+        debug("Session guid: " + m_sSessionGuid.value());
+
         std::filesystem::path sourcePluginPath = getPluginBinariesPath();
         std::filesystem::path sessionPluginPath = getSessionBinariesPath().value();
 
+        debug("Creating session plugin path: " + sessionPluginPath.string());
+
         std::filesystem::create_directories(sessionPluginPath);
+
+        debug("Copying plugins...");
 
         std::vector<std::string> pluginFiles = std::vector<std::string>();
 
         for (const auto& entry : std::filesystem::directory_iterator(sourcePluginPath)) {
             std::string filename = entry.path().filename();
-            pluginFiles.push_back(filename);
-            std::filesystem::copy(entry.path(), sessionPluginPath / filename);
+            if (filename.find(".so") != std::string::npos) {
+                debug("Discovered plugin: " + filename);
+
+                pluginFiles.push_back(filename);
+
+                debug("Copying plugin: " + entry.path().string() + " to " + (sessionPluginPath / filename).string());
+                std::filesystem::copy(entry.path(), sessionPluginPath / filename);
+            }
         }
 
         for (auto& plugin : pluginFiles) {
-            if (plugin.find(".so") != std::string::npos) {
-                log("Loading plugin: " + plugin);
+            log("Loading plugin: " + plugin);
 
-                std::string pluginPath = sessionPluginPath / plugin;
+            std::string pluginPath = sessionPluginPath / plugin;
 
-                HyprlandAPI::invokeHyprctlCommand("plugin", "load " + pluginPath);
+            HyprlandAPI::invokeHyprctlCommand("plugin", "load " + pluginPath);
 
-                m_vPlugins.push_back(plugin);
-            }
+            m_vPlugins.push_back(plugin);
         }
     }
 
@@ -106,14 +124,26 @@ namespace hyprload {
         }
 
         std::filesystem::path sessionPluginPath = getSessionBinariesPath().value();
+        std::vector<CPlugin*> plugins = g_pPluginSystem->getAllPlugins();
 
         for (auto& plugin : m_vPlugins) {
             log("Unloading plugin: " + plugin);
 
             std::string pluginPath = sessionPluginPath / plugin;
 
+            if (std::none_of(plugins.begin(), plugins.end(), [&pluginPath](CPlugin* plugin) { return plugin->path == pluginPath; })) {
+                debug("Plugin not found in plugin system, likely already unloaded, skipping unload...");
+                continue;
+            }
+
             HyprlandAPI::invokeHyprctlCommand("plugin", "unload " + pluginPath);
         }
+
+        cleanupPlugin();
+    }
+
+    void Hyprload::cleanupPlugin() {
+        std::filesystem::path sessionPluginPath = getSessionBinariesPath().value();
 
         m_vPlugins.clear();
 
@@ -131,8 +161,13 @@ namespace hyprload {
         log("Reloaded plugins!");
     }
 
+    const std::vector<std::string>& Hyprload::getLoadedPlugins() {
+        return m_vPlugins;
+    }
+
     std::string Hyprload::generateSessionGuid() {
         std::string guid = std::string();
+        std::srand(std::time(nullptr));
 
         for (int i = 0; i < 16; i++) {
             guid += std::to_string(rand() % 10);
@@ -148,4 +183,5 @@ namespace hyprload {
 
         return getPluginsPath() / ("session." + m_sSessionGuid.value());
     }
+
 }

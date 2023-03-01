@@ -1,4 +1,6 @@
 #pragma once
+#include "HyprloadOverlay.hpp"
+#define WLR_USE_UNSTABLE
 
 #include <string>
 #include <vector>
@@ -6,6 +8,8 @@
 #include <filesystem>
 
 #include <src/helpers/Color.hpp>
+#include <src/helpers/Monitor.hpp>
+#include <src/render/Texture.hpp>
 
 namespace hyprload {
     const CColor s_pluginColor = {0x98 / 255.0f, 0xc3 / 255.0f, 0x79 / 255.0f, 1.0f};
@@ -28,12 +32,16 @@ namespace hyprload {
     class Hyprload {
       public:
         Hyprload();
-        ~Hyprload();
 
         void dispatch(const std::string& command);
         void loadPlugins();
-        void clearPlugins();
         void reloadPlugins();
+
+        // Unload all plugins, except *this* plugin
+        void clearPlugins();
+
+        // Cleanup specific to *this* plugin
+        void cleanupPlugin();
 
         const std::vector<std::string>& getLoadedPlugins();
         bool isPluginLoaded(const std::string& name);
