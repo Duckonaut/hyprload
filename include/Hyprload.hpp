@@ -1,6 +1,7 @@
 #pragma once
-#include "HyprloadOverlay.hpp"
 #define WLR_USE_UNSTABLE
+#include "HyprloadOverlay.hpp"
+#include "types.hpp"
 
 #include <string>
 #include <vector>
@@ -29,12 +30,12 @@ namespace hyprload {
     bool isQuiet();
     bool isDebug();
 
-    void log(const std::string& message);
-    void debug(const std::string& message);
+    void log(const std::string& message, usize duration = 5000);
+    void debug(const std::string& message, usize duration = 5000);
 
-    std::optional<int> tryCreateLock(const std::filesystem::path& path);
-    std::optional<int> tryGetLock(const std::filesystem::path& path);
-    void releaseLock(int lock);
+    std::optional<flock_t> tryCreateLock(const std::filesystem::path& path);
+    std::optional<flock_t> tryGetLock(const std::filesystem::path& path);
+    void releaseLock(flock_t lock);
 
     void tryCleanupPreviousSessions();
 
@@ -66,7 +67,7 @@ namespace hyprload {
 
         std::vector<std::string> m_vPlugins;
         std::optional<std::string> m_sSessionGuid;
-        std::optional<int> m_iSessionLock;
+        std::optional<flock_t> m_iSessionLock;
     };
 
     inline std::unique_ptr<Hyprload> g_pHyprload;

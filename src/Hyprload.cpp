@@ -9,26 +9,23 @@
 
 #include <time.h>
 #include <random>
-#include <fstream>
 #include <cstdlib>
 #include <ctime>
 
-extern "C" {
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
-}
 
 namespace hyprload {
     std::filesystem::path getRootPath() {
-        SConfigValue* hyprloadRoot = HyprlandAPI::getConfigValue(PHANDLE, c_pluginRoot);
+        static SConfigValue* hyprloadRoot = HyprlandAPI::getConfigValue(PHANDLE, c_pluginRoot);
 
         return std::filesystem::path(hyprloadRoot->strValue);
     }
 
     std::optional<std::filesystem::path> getHyprlandHeadersPath() {
-        SConfigValue* hyprloadHeaders = HyprlandAPI::getConfigValue(PHANDLE, c_hyprlandHeaders);
+        static SConfigValue* hyprloadHeaders = HyprlandAPI::getConfigValue(PHANDLE, c_hyprlandHeaders);
 
         if (hyprloadHeaders->strValue.empty()) {
             return std::nullopt;
@@ -38,7 +35,7 @@ namespace hyprload {
     }
 
     std::filesystem::path getConfigPath() {
-        SConfigValue* hyprloadConfig = HyprlandAPI::getConfigValue(PHANDLE, c_pluginConfig);
+        static SConfigValue* hyprloadConfig = HyprlandAPI::getConfigValue(PHANDLE, c_pluginConfig);
 
         return std::filesystem::path(hyprloadConfig->strValue);
     }
@@ -52,27 +49,27 @@ namespace hyprload {
     }
 
     bool isQuiet() {
-        SConfigValue* hyprloadQuiet = HyprlandAPI::getConfigValue(PHANDLE, c_pluginQuiet);
+        static SConfigValue* hyprloadQuiet = HyprlandAPI::getConfigValue(PHANDLE, c_pluginQuiet);
 
         return hyprloadQuiet->intValue;
     }
 
     bool isDebug() {
-        SConfigValue* hyprloadDebug = HyprlandAPI::getConfigValue(PHANDLE, c_pluginDebug);
+        static SConfigValue* hyprloadDebug = HyprlandAPI::getConfigValue(PHANDLE, c_pluginDebug);
 
         return hyprloadDebug->intValue;
     }
 
-    void log(const std::string& message) {
+    void log(const std::string& message, usize duration) {
         if (!isQuiet()) {
-            HyprlandAPI::addNotification(PHANDLE, "[hyprload] " + message, s_pluginColor, 5000);
+            HyprlandAPI::addNotification(PHANDLE, "[hyprload] " + message, s_pluginColor, duration);
         }
     }
 
-    void debug(const std::string& message) {
+    void debug(const std::string& message, usize duration) {
         if (isDebug()) {
             std::string debugMessage = "[hyprload] " + message;
-            HyprlandAPI::addNotification(PHANDLE, debugMessage, s_debugColor, 5000);
+            HyprlandAPI::addNotification(PHANDLE, debugMessage, s_debugColor, duration);
             Debug::log(LOG, (' ' + debugMessage).c_str());
         }
     }
@@ -80,21 +77,6 @@ namespace hyprload {
     Hyprload::Hyprload() {
         m_sSessionGuid = std::nullopt;
         m_vPlugins = std::vector<std::string>();
-    }
-
-    void Hyprload::dispatch(const std::string& command) {
-        if (command == "load") {
-            loadPlugins();
-        } else if (command == "clear") {
-            clearPlugins();
-        } else if (command == "reload") {
-            reloadPlugins();
-        } else if (command == "overlay") {
-            log("Toggling overlay...");
-            g_pOverlay->m_bDrawOverlay = !g_pOverlay->m_bDrawOverlay;
-        } else {
-            log("Unknown command: " + command);
-        }
     }
 
     void Hyprload::loadPlugins() {
@@ -215,7 +197,7 @@ namespace hyprload {
         std::string guid = std::string();
         std::srand(std::time(nullptr));
 
-        for (int i = 0; i < 16; i++) {
+        for (usize i = 0; i < 16; i++) {
             guid += std::to_string(rand() % 10);
         }
 
@@ -262,7 +244,7 @@ namespace hyprload {
 
     std::optional<int> tryCreateLock(const std::filesystem::path& lockFile) {
         mode_t oldMask = umask(0);
-        int fd = open(lockFile.c_str(), O_RDWR | O_CREAT | O_EXCL, 0666);
+        fd_t fd = open(lockFile.c_str(), O_RDWR | O_CREAT | O_EXCL, 0666);
         umask(oldMask);
 
         if (fd < 0) {
@@ -270,7 +252,7 @@ namespace hyprload {
             return -1;
         }
 
-        int lock = flock(fd, LOCK_EX | LOCK_NB);
+        flock_t lock = flock(fd, LOCK_EX | LOCK_NB);
 
         if (lock < 0) {
             close(fd);
@@ -281,14 +263,14 @@ namespace hyprload {
     }
 
     std::optional<int> tryGetLock(const std::filesystem::path& lockFile) {
-        int fd = open(lockFile.c_str(), O_RDWR);
+        fd_t fd = open(lockFile.c_str(), O_RDWR);
 
         if (fd < 0) {
             close(fd);
             return std::nullopt;
         }
 
-        int lock = flock(fd, LOCK_EX | LOCK_NB);
+        flock_t lock = flock(fd, LOCK_EX | LOCK_NB);
 
         if (lock < 0) {
             close(fd);
@@ -298,7 +280,7 @@ namespace hyprload {
         return fd;
     }
 
-    void releaseLock(int lock) {
+    void releaseLock(flock_t lock) {
         if (lock < 0) {
             return;
         }
