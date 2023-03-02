@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <variant>
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -19,3 +20,40 @@ typedef unsigned int usize;
 
 typedef int fd_t;
 typedef int flock_t;
+
+namespace hyprload {
+    template <typename T, typename E>
+    class Result {
+      public:
+        Result(T&& value) : m_internal(std::move(value)) {}
+
+        Result(E&& value) : m_internal(std::move(value)) {}
+
+        static Result<T, E> ok(T&& value) {
+            return Result<T, E>(std::move(value));
+        }
+
+        static Result<T, E> err(E&& value) {
+            return Result<T, E>(std::move(value));
+        }
+
+        bool isOk() const {
+            return std::holds_alternative<T>(m_internal);
+        }
+
+        bool isErr() const {
+            return std::holds_alternative<E>(m_internal);
+        }
+
+        T unwrap() {
+            return std::get<T>(m_internal);
+        }
+
+        E unwrapErr() {
+            return std::get<E>(m_internal);
+        }
+
+      private:
+        std::variant<T, E> m_internal;
+    };
+}
