@@ -51,7 +51,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     PHANDLE = handle;
     hyprload::g_pHyprload = std::make_unique<hyprload::Hyprload>();
     hyprload::overlay::g_pOverlay = std::make_unique<hyprload::overlay::HyprloadOverlay>();
-    hyprload::config::g_pHyprloadConfig = std::make_unique<hyprload::config::HyprloadConfig>();
 
     std::string home = getenv("HOME");
     std::string defaultPluginDir = home + std::string("/.local/share/hyprload/");
@@ -60,7 +59,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginRoot, SConfigValue{.strValue = defaultPluginDir});
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_hyprlandHeaders, SConfigValue{.strValue = ""});
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginQuiet, SConfigValue{.intValue = 0});
-    HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginDebug, SConfigValue{.intValue = 0});
+    HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginDebug, SConfigValue{.intValue = 1});
 
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::overlay::c_overlayAnimationCurve, SConfigValue{.strValue = "default"});
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::overlay::c_overlayAnimationDuration, SConfigValue{.floatValue = 0.5});
@@ -74,6 +73,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     g_pRenderAllClientsForMonitorHook->hook();
 
     HyprlandAPI::reloadConfig();
+
+    hyprload::config::g_pHyprloadConfig = std::make_unique<hyprload::config::HyprloadConfig>();
 
     hyprload::log("Cleaning up old sessions...");
 
