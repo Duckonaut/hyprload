@@ -26,7 +26,7 @@ The guide on compiling and installing Hyprland manually is on the [wiki](http://
     - `exec-once=$HOME/.local/share/hyprload/hyprload.sh`
 
 # Setup
-1. Before asking for plugins, should add the path to the Hyprland headers in the Hyprland config. [Config variables](##Configuration)
+1. Before asking for plugins, should add the path to the Hyprland headers in the Hyprland config. [Config variables](#configuration)
 2. To have hyprload manage your plugin installation, create a `hyprload.toml` file (by default, next to your `hyprland.conf` config: `~/.config/hypr/hyprload.toml`
 3. Fill it out with the plugins you want. It consists of one array, named plugins, in which you can provide the installation source in various ways. Example:
 ```toml
