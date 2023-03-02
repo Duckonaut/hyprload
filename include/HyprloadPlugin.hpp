@@ -98,20 +98,18 @@ namespace hyprload::plugin {
         std::filesystem::path m_pSourcePath;
     };
 
-    class PluginDescription {
+    class PluginRequirement {
       public:
-        PluginDescription(const toml::table& plugin);
-        PluginDescription(const std::string& plugin);
+        PluginRequirement(const toml::table& plugin);
+        PluginRequirement(const std::string& plugin);
 
         const std::string& getName() const;
         const PluginSource& getSource() const;
-        const std::filesystem::path& getSourcePath() const;
         const std::filesystem::path& getBinaryPath() const;
 
       private:
         std::string m_sName;
         std::shared_ptr<PluginSource> m_pSource;
-        std::filesystem::path m_pSourcePath;
         std::filesystem::path m_pBinaryPath;
     };
 }

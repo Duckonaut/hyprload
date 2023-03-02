@@ -39,7 +39,7 @@ $(PLUGIN_NAME).so: $(addprefix $(OBJECT_DIR)/, $(notdir $(SOURCE_FILES:.cpp=.o))
 
 clean:
 	rm -rf $(OBJECT_DIR)
-	rm $(PLUGIN_NAME).so
+	rm -f $(PLUGIN_NAME).so
 
 clangd:
 	printf "%b" "-I/usr/include/pixman-1\n-I/usr/include/libdrm\n-I${HYPRLAND_HEADERS}\n-Iinclude\n-std=c++2b\n-Wall\n-Wextra" > compile_flags.txt

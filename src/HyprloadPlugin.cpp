@@ -367,7 +367,7 @@ namespace hyprload::plugin {
         return m_pSourcePath == otherLocal.m_pSourcePath;
     }
 
-    PluginDescription::PluginDescription(const toml::table& plugin) {
+    PluginRequirement::PluginRequirement(const toml::table& plugin) {
         std::string source;
 
         if (plugin.contains("git") && plugin["git"].is_string()) {
@@ -393,23 +393,18 @@ namespace hyprload::plugin {
             m_sName = source.substr(source.find_last_of('/') + 1);
         }
 
-        m_pSourcePath = hyprload::getPluginsPath() / "src" / m_sName;
         m_pBinaryPath = hyprload::getPluginsPath() / "bin" / (m_sName + ".so");
     }
 
-    const std::string& PluginDescription::getName() const {
+    const std::string& PluginRequirement::getName() const {
         return m_sName;
     }
 
-    const std::filesystem::path& PluginDescription::getSourcePath() const {
-        return m_pSourcePath;
-    }
-
-    const std::filesystem::path& PluginDescription::getBinaryPath() const {
+    const std::filesystem::path& PluginRequirement::getBinaryPath() const {
         return m_pBinaryPath;
     }
 
-    const PluginSource& PluginDescription::getSource() const {
+    const PluginSource& PluginRequirement::getSource() const {
         return *m_pSource;
     }
 }
