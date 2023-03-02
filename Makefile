@@ -33,4 +33,4 @@ clean:
 	rm $(PLUGIN_NAME).so
 
 clangd:
-	printf "%b" "-I/usr/include/pixman-1\n-I/usr/include/libdrm\n-I${HYPRLAND_HEADERS}\n-Iinclude\n-std=c++2b" > compile_flags.txt
+	printf "%b" "-I/usr/include/pixman-1\n-I/usr/include/libdrm\n-I${HYPRLAND_HEADERS}\n-Iinclude\n-std=c++2b\n-Wall\n-Wextra" > compile_flags.txt

@@ -17,6 +17,7 @@
 
 #include "Hyprload.hpp"
 #include "HyprloadOverlay.hpp"
+#include "HyprloadConfig.hpp"
 
 inline CFunctionHook* g_pRenderAllClientsForMonitorHook = nullptr;
 typedef void (*origRenderAllClientsForMonitor)(void*, const int&, timespec*);
@@ -50,19 +51,21 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     PHANDLE = handle;
     hyprload::g_pHyprload = std::make_unique<hyprload::Hyprload>();
     hyprload::overlay::g_pOverlay = std::make_unique<hyprload::overlay::HyprloadOverlay>();
+    hyprload::config::g_pHyprloadConfig = std::make_unique<hyprload::config::HyprloadConfig>();
 
     std::string home = getenv("HOME");
     std::string defaultPluginDir = home + std::string("/.local/share/hyprload/");
     std::string defaultConfigPath = home + std::string("/.config/hypr/hyprload.toml");
 
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginRoot, SConfigValue{.strValue = defaultPluginDir});
-    HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginConfig, SConfigValue{.strValue = defaultConfigPath});
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_hyprlandHeaders, SConfigValue{.strValue = ""});
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginQuiet, SConfigValue{.intValue = 0});
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginDebug, SConfigValue{.intValue = 0});
 
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::overlay::c_overlayAnimationCurve, SConfigValue{.strValue = "default"});
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::overlay::c_overlayAnimationDuration, SConfigValue{.floatValue = 0.5});
+
+    HyprlandAPI::addConfigValue(PHANDLE, hyprload::config::c_pluginConfig, SConfigValue{.strValue = defaultConfigPath});
 
     HyprlandAPI::addDispatcher(PHANDLE, "hyprload", hyprloadDispatcher);
 

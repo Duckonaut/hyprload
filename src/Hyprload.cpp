@@ -34,12 +34,6 @@ namespace hyprload {
         return std::filesystem::path(hyprloadHeaders->strValue);
     }
 
-    std::filesystem::path getConfigPath() {
-        static SConfigValue* hyprloadConfig = HyprlandAPI::getConfigValue(PHANDLE, c_pluginConfig);
-
-        return std::filesystem::path(hyprloadConfig->strValue);
-    }
-
     std::filesystem::path getPluginsPath() {
         return getRootPath() / "plugins";
     }
@@ -189,7 +183,7 @@ namespace hyprload {
         log("Reloaded plugins!");
     }
 
-    const std::vector<std::string>& Hyprload::getLoadedPlugins() {
+    const std::vector<std::string>& Hyprload::getLoadedPlugins() const {
         return m_vPlugins;
     }
 

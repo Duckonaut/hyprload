@@ -17,7 +17,6 @@ namespace hyprload {
     const CColor s_debugColor = {0x98 / 255.0f, 0x5f / 255.0f, 0xdd / 255.0f, 1.0f};
 
     const std::string c_pluginRoot = "plugin:hyprload:root";
-    const std::string c_pluginConfig = "plugin:hyprload:config";
     const std::string c_hyprlandHeaders = "plugin:hyprload:hyprland_headers";
     const std::string c_pluginQuiet = "plugin:hyprload:quiet";
     const std::string c_pluginDebug = "plugin:hyprload:debug";
@@ -43,7 +42,11 @@ namespace hyprload {
       public:
         Hyprload();
 
-        void dispatch(const std::string& command);
+        void installPlugins();
+        void uninstallPlugins();
+        void uninstallPlugin(const std::string& name);
+        void updatePlugins();
+        void updatePlugin(const std::string& name);
 
         void loadPlugins();
         void reloadPlugins();
@@ -57,8 +60,8 @@ namespace hyprload {
         // Cleanup specific to *this* plugin
         void cleanupPlugin();
 
-        const std::vector<std::string>& getLoadedPlugins();
-        bool isPluginLoaded(const std::string& name);
+        const std::vector<std::string>& getLoadedPlugins() const;
+        bool isPluginLoaded(const std::string& name) const;
 
       private:
         std::optional<std::filesystem::path> getSessionBinariesPath();
