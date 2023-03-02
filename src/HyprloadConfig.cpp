@@ -1,5 +1,6 @@
 #include "HyprloadConfig.hpp"
 #include "Hyprload.hpp"
+#include "HyprloadPlugin.hpp"
 #include "toml/toml.hpp"
 
 #include <src/config/ConfigManager.hpp>
@@ -20,7 +21,7 @@ namespace hyprload::config {
         }
 
         if (m_pConfig->contains("plugins") && m_pConfig->get("plugins")->is_array()) {
-            m_pConfig->get("plugins")->as_array()->for_each([&plugins = m_vPlugins](const toml::node& value) {
+            m_pConfig->get("plugins")->as_array()->for_each([&plugins = m_vPluginsWanted](const toml::node& value) {
                 if (value.is_string()) {
                     plugins.emplace_back(value.as_string()->get());
                 } else if (value.is_table()) {
@@ -41,7 +42,7 @@ namespace hyprload::config {
         return *m_pConfig;
     }
 
-    const std::vector<hyprload::plugin::PluginDescription>& HyprloadConfig::getPlugins() const {
-        return m_vPlugins;
+    const std::vector<hyprload::plugin::PluginRequirement>& HyprloadConfig::getPlugins() const {
+        return m_vPluginsWanted;
     }
 }

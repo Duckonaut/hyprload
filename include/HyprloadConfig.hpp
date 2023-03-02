@@ -19,11 +19,11 @@ namespace hyprload::config {
         HyprloadConfig();
 
         const toml::table& getConfig() const;
-        const std::vector<hyprload::plugin::PluginDescription>& getPlugins() const;
+        const std::vector<hyprload::plugin::PluginRequirement>& getPlugins() const;
 
       private:
         std::unique_ptr<toml::table> m_pConfig;
-        std::vector<hyprload::plugin::PluginDescription> m_vPlugins;
+        std::vector<hyprload::plugin::PluginRequirement> m_vPluginsWanted;
     };
 
     inline std::unique_ptr<HyprloadConfig> g_pHyprloadConfig;

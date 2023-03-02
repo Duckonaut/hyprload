@@ -76,11 +76,15 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     hyprload::config::g_pHyprloadConfig = std::make_unique<hyprload::config::HyprloadConfig>();
 
+    hyprload::log("Initialized successfully!");
+
     hyprload::log("Cleaning up old sessions...");
 
     hyprload::tryCleanupPreviousSessions();
 
-    hyprload::log("Initialized successfully!");
+    for (auto& plugin : hyprload::config::g_pHyprloadConfig->getPlugins()) {
+        hyprload::debug("Want to load plugin: " + plugin.getName() + "\n\tBinary Path: " + plugin.getBinaryPath().string());
+    }
 
     hyprload::log("Loading plugins...");
 
