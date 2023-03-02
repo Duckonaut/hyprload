@@ -144,6 +144,10 @@ namespace hyprload {
         std::filesystem::path sessionPluginPath = getSessionBinariesPath().value();
         std::vector<CPlugin*> plugins = g_pPluginSystem->getAllPlugins();
 
+        debug("Plugin count: " + std::to_string(plugins.size()));
+
+        std::vector<std::string> pluginFiles = std::vector<std::string>();
+
         for (auto& plugin : m_vPlugins) {
             log("Unloading plugin: " + plugin);
 
@@ -154,7 +158,11 @@ namespace hyprload {
                 continue;
             }
 
-            HyprlandAPI::invokeHyprctlCommand("plugin", "unload " + pluginPath);
+            pluginFiles.push_back(plugin);
+        }
+
+        for (auto& plugin : pluginFiles) {
+            HyprlandAPI::invokeHyprctlCommand("plugin", "unload " + plugin);
         }
 
         cleanupPlugin();
