@@ -1,4 +1,6 @@
 #pragma once
+#include "HyprloadPlugin.hpp"
+#include <memory>
 #define WLR_USE_UNSTABLE
 #include "HyprloadOverlay.hpp"
 #include "types.hpp"
@@ -43,10 +45,7 @@ namespace hyprload {
         Hyprload();
 
         void installPlugins();
-        void uninstallPlugins();
-        void uninstallPlugin(const std::string& name);
         void updatePlugins();
-        void updatePlugin(const std::string& name);
 
         void loadPlugins();
         void reloadPlugins();

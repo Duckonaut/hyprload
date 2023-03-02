@@ -3,6 +3,7 @@
 #include "toml/toml.hpp"
 #include "types.hpp"
 
+#include <memory>
 #include <string>
 #include <filesystem>
 #include <variant>
@@ -48,6 +49,7 @@ namespace hyprload::plugin {
         [[nodiscard]] virtual hyprload::Result<std::monostate, std::string> installSource() = 0;
         virtual bool isSourceAvailable() = 0;
         virtual bool isUpToDate() = 0;
+        virtual bool providesPlugin(const std::string& name) const = 0;
 
         [[nodiscard]] virtual hyprload::Result<std::monostate, std::string> update(const std::string& name) = 0;
         [[nodiscard]] virtual hyprload::Result<std::monostate, std::string> build(const std::string& name) = 0;
@@ -65,6 +67,7 @@ namespace hyprload::plugin {
         hyprload::Result<std::monostate, std::string> installSource() override;
         bool isSourceAvailable() override;
         bool isUpToDate() override;
+        bool providesPlugin(const std::string& name) const override;
 
         hyprload::Result<std::monostate, std::string> update(const std::string& name) override;
         hyprload::Result<std::monostate, std::string> build(const std::string& name) override;
@@ -86,6 +89,7 @@ namespace hyprload::plugin {
         hyprload::Result<std::monostate, std::string> installSource() override;
         bool isSourceAvailable() override;
         bool isUpToDate() override;
+        bool providesPlugin(const std::string& name) const override;
 
         hyprload::Result<std::monostate, std::string> update(const std::string& name) override;
         hyprload::Result<std::monostate, std::string> build(const std::string& name) override;
@@ -104,12 +108,18 @@ namespace hyprload::plugin {
         PluginRequirement(const std::string& plugin);
 
         const std::string& getName() const;
-        const PluginSource& getSource() const;
         const std::filesystem::path& getBinaryPath() const;
 
+        std::shared_ptr<PluginSource> getSource() const;
+
+        bool isInstalled() const;
+
       private:
+        
         std::string m_sName;
         std::shared_ptr<PluginSource> m_pSource;
         std::filesystem::path m_pBinaryPath;
     };
+
+    inline std::vector<std::shared_ptr<PluginSource>> g_vPluginSources;
 }

@@ -4,10 +4,12 @@ A (WIP) minimal [Hyprland](https://github.com/hyprwm/Hyprland) plugin manager
 # Features
 - [x] Loading plugins
 - [x] Reloading plugins
-- [ ] Installing and updating plugins automatically
-    - [ ] A unified plugin manifest format
-    - [ ] Installing from git
+- [x] Installing and updating plugins automatically
+    - [x] A unified plugin manifest format
+    - [x] Installing from git
+    - [x] Installing from local
     - [ ] Installing from a url
+    - [ ] Self-hosting
 
 # Installing
 Since Hyprland plugins don't have ABI guarantees, you *should* download the Hyprland source and compile it if you plan to use plugins.
@@ -23,7 +25,40 @@ The guide on compiling and installing Hyprland manually is on the [wiki](http://
 3. Add this to your config to initialize `hyprload`
     - `exec-once=$HOME/.local/share/hyprload/hyprload.sh`
 
-# Usage
-Put plugin builds you'd like to use into the `~/.local/share/hyprload/plugins/bin` directory. `hyprload` will load them automatically.
+# Setup
+1. Before asking for plugins, should add the path to the Hyprland headers in the Hyprland config. [Config variables](##Configuration)
+2. To have hyprload manage your plugin installation, create a `hyprload.toml` file (by default, next to your `hyprland.conf` config: `~/.config/hypr/hyprload.toml`
+3. Fill it out with the plugins you want. It consists of one array, named plugins, in which you can provide the installation source in various ways. Example:
+```toml
+plugins = [
+    # Installs the plugin from https://github.com/Duckonaut/split-monitor-workspaces
+    "Duckonaut/split-monitor-workspaces",
+    # A more explicit definition of the git install
+    { git = "https://github.com/Duckonaut/split-monitor-workspaces", branch = "main", name = "split-monitor-workspaces" },
+    # Installs the same plugin from a local folder
+    { local = "/home/duckonaut/repos/split-monitor-workspaces" },
+]
+```
+4. Add keybinds to the `hyprload` dispatcher in your `hyprland.conf` for the functions you want.
+    - Possible values:
+        - `load`: Loads all the plugins
+        - `clear`: Unloads all the plugins
+        - `reload`: Unloads then reloads all the plugins
+        - `overlay`: Toggles an overlay showing your actively loaded plugins
+        - `install`: Installs the required plugins from `hyprload.toml`
+        - `update`: Updates the required plugins from `hyprload.toml`
+    - Example:
+```
+bind=SUPERSHIFT,R,hyprload,reload
+bind=SUPERSHIFT,U,hyprload,update
+bind=SUPERSHIFT,O,hyprload,overlay
+```
 
-Hyprload keeps "sessions" of plugins, meaning that changing the plugins in `bin` (for example, updating them) does not require a full restart of Hyprload. The original unload will be called, the old plugin will be discarded, the new plugin copy will be loaded.
+## Configuration
+The configuration of hyprload behavior is done in `hyprland.conf`, like a normal plugin
+| Name                                      | Type      | Default                       | Description                                       |
+|-------------------------------------------|-----------|-------------------------------|---------------------------------------------------|
+| `plugin:hyprload:quiet`                   | bool      | false                         | Whether to hide the notifications                 |
+| `plugin:hyprload:debug`                   | bool      | false                         | Whether to hide extra-special debug notifications |
+| `plugin:hyprload:config`                  | string    | `~/.config/hypr/hyprload.toml`| The path to your plugin requirements file         |
+| `plugin:hyprload:hyprload_headers`        | string    | `empty`                       | The path to your hyprland local source            |

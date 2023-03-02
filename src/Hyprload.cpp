@@ -1,7 +1,10 @@
-#include "HyprloadOverlay.hpp"
+#include "HyprloadPlugin.hpp"
 #include "globals.hpp"
 
-#include <Hyprload.hpp>
+#include "Hyprload.hpp"
+#include "HyprloadConfig.hpp"
+#include "HyprloadOverlay.hpp"
+
 #include <src/helpers/Monitor.hpp>
 #include <src/plugins/PluginSystem.hpp>
 #include <src/config/ConfigManager.hpp>
@@ -16,6 +19,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
+#include <vector>
 
 namespace hyprload {
     std::filesystem::path getRootPath() {
@@ -55,22 +59,81 @@ namespace hyprload {
     }
 
     void log(const std::string& message, usize duration) {
+        std::string logMessage = "[hyprload] " + message;
         if (!isQuiet()) {
-            HyprlandAPI::addNotification(PHANDLE, "[hyprload] " + message, s_pluginColor, duration);
+            HyprlandAPI::addNotification(PHANDLE, logMessage, s_pluginColor, duration);
         }
+        Debug::log(LOG, (' ' + logMessage).c_str());
     }
 
     void debug(const std::string& message, usize duration) {
+        std::string debugMessage = "[hyprload] " + message;
         if (isDebug()) {
-            std::string debugMessage = "[hyprload] " + message;
             HyprlandAPI::addNotification(PHANDLE, debugMessage, s_debugColor, duration);
-            Debug::log(LOG, (' ' + debugMessage).c_str());
         }
+        Debug::log(LOG, (' ' + debugMessage).c_str());
     }
 
     Hyprload::Hyprload() {
         m_sSessionGuid = std::nullopt;
         m_vPlugins = std::vector<std::string>();
+    }
+
+    void Hyprload::installPlugins() {
+        const std::vector<plugin::PluginRequirement>& requirements = config::g_pHyprloadConfig->getPlugins();
+
+        for (const plugin::PluginRequirement& plugin : requirements) {
+            auto source = plugin.getSource();
+
+            if (!source->isSourceAvailable()) {
+                auto result = source->installSource();
+
+                if (result.isErr()) {
+                    log("Failed to install " + plugin.getName() + " source: " + result.unwrapErr(), 2500);
+                    continue;
+                }
+            }
+
+            auto result = source->install(plugin.getName());
+
+            if (result.isErr()) {
+                log("Failed to install " + plugin.getName() + ": " + result.unwrapErr(), 2500);
+                continue;
+            }
+
+            log("Installed " + plugin.getName(), 2500);
+        }
+    }
+
+    void Hyprload::updatePlugins() {
+        const std::vector<plugin::PluginRequirement>& requirements = config::g_pHyprloadConfig->getPlugins();
+
+        for (const plugin::PluginRequirement& plugin : requirements) {
+            auto source = plugin.getSource();
+
+            if (!source->isSourceAvailable()) {
+                auto result = source->installSource();
+
+                if (result.isErr()) {
+                    log("Failed to install " + plugin.getName() + " source: " + result.unwrapErr(), 2500);
+                    continue;
+                }
+            }
+
+            if (source->isUpToDate()) {
+                debug("Source is up to date, skipping update...");
+                continue;
+            }
+
+            auto result = source->update(plugin.getName());
+
+            if (result.isErr()) {
+                log("Failed to update " + plugin.getName() + ": " + result.unwrapErr(), 10000);
+                continue;
+            }
+
+            log("Updated " + plugin.getName(), 2500);
+        }
     }
 
     void Hyprload::loadPlugins() {
@@ -170,6 +233,7 @@ namespace hyprload {
 
     void Hyprload::cleanupPlugin() {
         std::filesystem::path sessionPluginPath = getSessionBinariesPath().value();
+        std::filesystem::path pluginBinariesPath = getPluginBinariesPath();
 
         m_vPlugins.clear();
 
@@ -178,6 +242,22 @@ namespace hyprload {
         unlockSession();
 
         std::filesystem::remove_all(sessionPluginPath);
+
+        const std::vector<plugin::PluginRequirement>& requirements = config::g_pHyprloadConfig->getPlugins();
+
+        for (auto& entry : std::filesystem::directory_iterator(pluginBinariesPath)) {
+            std::string filename = entry.path().filename();
+            if (filename.find(".so") != std::string::npos) {
+                std::string pluginName = filename.substr(0, filename.find(".so"));
+
+                if (std::none_of(requirements.begin(), requirements.end(),
+                                 [&pluginName](const plugin::PluginRequirement& requirement) { return requirement.getName() == pluginName; })) {
+                    debug("Plugin " + pluginName + " not in requirements, removing...");
+
+                    std::filesystem::remove(entry.path());
+                }
+            }
+        }
 
         m_sSessionGuid = std::nullopt;
     }

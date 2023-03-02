@@ -40,6 +40,10 @@ void hyprloadDispatcher(std::string command) {
         hyprload::g_pHyprload->clearPlugins();
     } else if (command == "reload") {
         hyprload::g_pHyprload->reloadPlugins();
+    } else if (command == "install") {
+        hyprload::g_pHyprload->installPlugins();
+    } else if (command == "update") {
+        hyprload::g_pHyprload->updatePlugins();
     } else if (command == "overlay") {
         hyprload::overlay::g_pOverlay->toggleDrawOverlay();
     } else {
@@ -59,7 +63,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginRoot, SConfigValue{.strValue = defaultPluginDir});
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_hyprlandHeaders, SConfigValue{.strValue = ""});
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginQuiet, SConfigValue{.intValue = 0});
-    HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginDebug, SConfigValue{.intValue = 1});
+    HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginDebug, SConfigValue{.intValue = 0});
 
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::overlay::c_overlayAnimationCurve, SConfigValue{.strValue = "default"});
     HyprlandAPI::addConfigValue(PHANDLE, hyprload::overlay::c_overlayAnimationDuration, SConfigValue{.floatValue = 0.5});
@@ -92,7 +96,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     hyprload::log("Plugins loaded!");
 
-    return {"hyprload", "Minimal hyprland plugin manager", "Duckonaut", "0.3.1"};
+    return {"hyprload", "Minimal hyprland plugin manager", "Duckonaut", "0.4.0"};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
