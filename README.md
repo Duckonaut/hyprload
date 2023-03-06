@@ -1,5 +1,5 @@
 # Hyprload
-A (WIP) minimal [Hyprland](https://github.com/hyprwm/Hyprland) plugin manager
+A (WIP) [Hyprland](https://github.com/hyprwm/Hyprland) plugin manager
 
 # Features
 - [x] Loading plugins

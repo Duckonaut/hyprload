@@ -75,9 +75,7 @@ namespace hyprload::plugin {
         return hyprload::Result<PluginManifest, std::string>::ok(std::move(pluginManifest.value()));
     }
 
-    hyprload::Result<std::monostate, std::string> buildPlugin(const std::filesystem::path& sourcePath, const std::string& name) {
-        std::optional<std::filesystem::path> hyprlandHeadersPath = hyprload::getHyprlandHeadersPath();
-
+    hyprload::Result<std::monostate, std::string> buildPlugin(const std::filesystem::path& sourcePath, const std::string& name, const std::filesystem::path& hyprlandHeadersPath) {
         auto pluginManifestResult = getPluginManifest(sourcePath, name);
 
         if (pluginManifestResult.isErr()) {
@@ -86,11 +84,7 @@ namespace hyprload::plugin {
 
         const auto& pluginManifest = pluginManifestResult.unwrap();
 
-        if (!hyprlandHeadersPath.has_value()) {
-            return hyprload::Result<std::monostate, std::string>::err("Could not find hyprland headers. Refer to https://github.com/Duckonaut/hyprload#Setup");
-        }
-
-        std::string buildSteps = "export HYPRLAND_HEADERS=" + hyprlandHeadersPath.value().string() + " && cd " + sourcePath.string() + " && ";
+        std::string buildSteps = "export HYPRLAND_HEADERS=" + hyprlandHeadersPath.string() + " && cd " + sourcePath.string() + " && ";
 
         for (const std::string& step : pluginManifest.getBuildSteps()) {
             buildSteps += step + " && ";
@@ -263,22 +257,22 @@ namespace hyprload::plugin {
         return true;
     }
 
-    hyprload::Result<std::monostate, std::string> GitPluginSource::update(const std::string& name) {
+    hyprload::Result<std::monostate, std::string> GitPluginSource::update(const std::string& name, const std::filesystem::path& hyprlandHeaders) {
         std::string command = "git -C " + m_pSourcePath.string() + " pull";
 
         if (std::system(command.c_str()) != 0) {
             return hyprload::Result<std::monostate, std::string>::err("Failed to update plugin source");
         }
 
-        return this->install(name);
+        return this->install(name, hyprlandHeaders);
     }
 
-    hyprload::Result<std::monostate, std::string> GitPluginSource::install(const std::string& name) {
+    hyprload::Result<std::monostate, std::string> GitPluginSource::install(const std::string& name, const std::filesystem::path& hyprlandHeaders) {
         if (!this->isSourceAvailable()) {
             return this->installSource();
         }
 
-        auto result = build(name);
+        auto result = build(name, hyprlandHeaders);
 
         if (result.isErr()) {
             return result;
@@ -309,8 +303,8 @@ namespace hyprload::plugin {
         return hyprload::Result<std::monostate, std::string>::ok(std::monostate());
     }
 
-    hyprload::Result<std::monostate, std::string> GitPluginSource::build(const std::string& name) {
-        return buildPlugin(m_pSourcePath, name);
+    hyprload::Result<std::monostate, std::string> GitPluginSource::build(const std::string& name, const std::filesystem::path& hyprlandHeaders) {
+        return buildPlugin(m_pSourcePath, name, hyprlandHeaders);
     }
 
     bool GitPluginSource::isEquivalent(const PluginSource& other) const {
@@ -344,16 +338,16 @@ namespace hyprload::plugin {
         return true;
     }
 
-    hyprload::Result<std::monostate, std::string> LocalPluginSource::update(const std::string& name) {
-        return this->install(name);
+    hyprload::Result<std::monostate, std::string> LocalPluginSource::update(const std::string& name, const std::filesystem::path& hyprlandHeaders) {
+        return this->install(name, hyprlandHeaders);
     }
 
-    hyprload::Result<std::monostate, std::string> LocalPluginSource::install(const std::string& name) {
+    hyprload::Result<std::monostate, std::string> LocalPluginSource::install(const std::string& name, const std::filesystem::path& hyprlandHeaders) {
         if (!this->isSourceAvailable()) {
             return hyprload::Result<std::monostate, std::string>::err("Source for " + name + " does not exist");
         }
 
-        auto result = build(name);
+        auto result = build(name, hyprlandHeaders);
 
         if (result.isErr()) {
             return result;
@@ -384,8 +378,8 @@ namespace hyprload::plugin {
         return hyprload::Result<std::monostate, std::string>::ok(std::monostate());
     }
 
-    hyprload::Result<std::monostate, std::string> LocalPluginSource::build(const std::string& name) {
-        return buildPlugin(m_pSourcePath, name);
+    hyprload::Result<std::monostate, std::string> LocalPluginSource::build(const std::string& name, const std::filesystem::path& hyprlandHeaders) {
+        return buildPlugin(m_pSourcePath, name, hyprlandHeaders);
     }
 
     bool LocalPluginSource::isEquivalent(const PluginSource& other) const {

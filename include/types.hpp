@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <cstdint>
 #include <variant>
 
@@ -15,8 +16,8 @@ typedef int64_t i64;
 typedef float f32;
 typedef double f64;
 
-typedef int isize;
-typedef unsigned int usize;
+typedef int size;
+typedef size_t usize;
 
 typedef int fd_t;
 typedef int flock_t;
