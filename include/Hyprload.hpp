@@ -43,8 +43,10 @@ namespace hyprload {
     void tryCleanupPreviousSessions();
 
     class BuildProcessDescriptor final {
-        public:
-        BuildProcessDescriptor(std::string&& name, std::shared_ptr<hyprload::plugin::PluginSource> source, const std::filesystem::path& hyprlandHeadersPath);
+      public:
+        BuildProcessDescriptor(std::string&& name,
+                               std::shared_ptr<hyprload::plugin::PluginSource> source,
+                               const std::filesystem::path& hyprlandHeadersPath);
 
         std::string m_sName;
         std::shared_ptr<hyprload::plugin::PluginSource> m_pSource;

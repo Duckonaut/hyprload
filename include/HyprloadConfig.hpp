@@ -13,7 +13,6 @@ namespace hyprload::config {
 
     std::filesystem::path getConfigPath();
 
-
     class HyprloadConfig {
       public:
         HyprloadConfig();

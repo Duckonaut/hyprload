@@ -32,7 +32,8 @@ namespace hyprload {
     }
 
     std::optional<std::filesystem::path> getHyprlandHeadersPath() {
-        static SConfigValue* hyprloadHeaders = HyprlandAPI::getConfigValue(PHANDLE, c_hyprlandHeaders);
+        static SConfigValue* hyprloadHeaders =
+            HyprlandAPI::getConfigValue(PHANDLE, c_hyprlandHeaders);
 
         if (hyprloadHeaders->strValue.empty() || hyprloadHeaders->strValue == STRVAL_EMPTY) {
             return std::nullopt;
@@ -79,7 +80,9 @@ namespace hyprload {
         Debug::log(LOG, (' ' + debugMessage).c_str());
     }
 
-    BuildProcessDescriptor::BuildProcessDescriptor(std::string&& name, std::shared_ptr<hyprload::plugin::PluginSource> source, const std::filesystem::path& hyprlandHeadersPath) {
+    BuildProcessDescriptor::BuildProcessDescriptor(
+        std::string&& name, std::shared_ptr<hyprload::plugin::PluginSource> source,
+        const std::filesystem::path& hyprlandHeadersPath) {
         m_sName = std::move(name);
         m_pSource = source;
         m_sHyprlandHeadersPath = hyprlandHeadersPath;
@@ -106,7 +109,9 @@ namespace hyprload {
                     } else {
                         log("Successfully updated " + bp->m_sName);
                     }
-                    m_vBuildProcesses.erase(std::remove(m_vBuildProcesses.begin(), m_vBuildProcesses.end(), bp), m_vBuildProcesses.end());
+                    m_vBuildProcesses.erase(
+                        std::remove(m_vBuildProcesses.begin(), m_vBuildProcesses.end(), bp),
+                        m_vBuildProcesses.end());
                     debug("Build processes left: " + std::to_string(m_vBuildProcesses.size()));
                 }
 
@@ -130,10 +135,13 @@ namespace hyprload {
 
         m_bIsBuilding = true;
 
-        std::optional<std::filesystem::path> hyprlandHeadersPathMaybe = hyprload::getHyprlandHeadersPath();
+        std::optional<std::filesystem::path> hyprlandHeadersPathMaybe =
+            hyprload::getHyprlandHeadersPath();
 
         if (!hyprlandHeadersPathMaybe.has_value()) {
-            hyprload::log("Could not find hyprland headers. Refer to https://github.com/Duckonaut/hyprload#Setup", 10000);
+            hyprload::log("Could not find hyprland headers. Refer to "
+                          "https://github.com/Duckonaut/hyprload#Setup",
+                          10000);
             return;
         }
 
@@ -141,10 +149,13 @@ namespace hyprload {
 
         config::g_pHyprloadConfig->reloadConfig();
 
-        const std::vector<plugin::PluginRequirement>& requirements = config::g_pHyprloadConfig->getPlugins();
+        const std::vector<plugin::PluginRequirement>& requirements =
+            config::g_pHyprloadConfig->getPlugins();
 
         for (const plugin::PluginRequirement& plugin : requirements) {
-            std::shared_ptr<hyprload::BuildProcessDescriptor> descriptor = std::make_shared<hyprload::BuildProcessDescriptor>(std::string(plugin.getName()), plugin.getSource(), hyprlandHeadersPath);
+            std::shared_ptr<hyprload::BuildProcessDescriptor> descriptor =
+                std::make_shared<hyprload::BuildProcessDescriptor>(
+                    std::string(plugin.getName()), plugin.getSource(), hyprlandHeadersPath);
 
             auto myDescriptor = descriptor;
             m_vBuildProcesses.push_back(myDescriptor);
@@ -158,23 +169,28 @@ namespace hyprload {
                     if (result.isErr()) {
                         auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
 
-                        descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err("Failed to install " + descriptor->m_sName + " source: " + result.unwrapErr());
+                        descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err(
+                            "Failed to install " + descriptor->m_sName +
+                            " source: " + result.unwrapErr());
                         return;
                     }
                 }
 
-                auto result = source->build(descriptor->m_sName, descriptor->m_sHyprlandHeadersPath);
+                auto result =
+                    source->build(descriptor->m_sName, descriptor->m_sHyprlandHeadersPath);
 
                 if (result.isErr()) {
                     auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
 
-                    descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err("Failed to build " + descriptor->m_sName + ": " + result.unwrapErr());
+                    descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err(
+                        "Failed to build " + descriptor->m_sName + ": " + result.unwrapErr());
                     return;
                 }
 
                 auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
 
-                descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::ok(std::monostate());
+                descriptor->m_rResult =
+                    hyprload::Result<std::monostate, std::string>::ok(std::monostate());
             });
 
             thread.detach();
@@ -189,10 +205,13 @@ namespace hyprload {
 
         m_bIsBuilding = true;
 
-        std::optional<std::filesystem::path> hyprlandHeadersPathMaybe = hyprload::getHyprlandHeadersPath();
+        std::optional<std::filesystem::path> hyprlandHeadersPathMaybe =
+            hyprload::getHyprlandHeadersPath();
 
         if (!hyprlandHeadersPathMaybe.has_value()) {
-            hyprload::log("Could not find hyprland headers. Refer to https://github.com/Duckonaut/hyprload#Setup", 10000);
+            hyprload::log("Could not find hyprland headers. Refer to "
+                          "https://github.com/Duckonaut/hyprload#Setup",
+                          10000);
             return;
         }
 
@@ -200,10 +219,13 @@ namespace hyprload {
 
         config::g_pHyprloadConfig->reloadConfig();
 
-        const std::vector<plugin::PluginRequirement>& requirements = config::g_pHyprloadConfig->getPlugins();
+        const std::vector<plugin::PluginRequirement>& requirements =
+            config::g_pHyprloadConfig->getPlugins();
 
         for (const plugin::PluginRequirement& plugin : requirements) {
-            std::shared_ptr<hyprload::BuildProcessDescriptor> descriptor = std::make_shared<hyprload::BuildProcessDescriptor>(std::string(plugin.getName()), plugin.getSource(), hyprlandHeadersPath);
+            std::shared_ptr<hyprload::BuildProcessDescriptor> descriptor =
+                std::make_shared<hyprload::BuildProcessDescriptor>(
+                    std::string(plugin.getName()), plugin.getSource(), hyprlandHeadersPath);
 
             auto myDescriptor = descriptor;
             m_vBuildProcesses.push_back(myDescriptor);
@@ -217,7 +239,9 @@ namespace hyprload {
                     if (result.isErr()) {
                         auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
 
-                        descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err("Failed to install " + descriptor->m_sName + " source: " + result.unwrapErr());
+                        descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err(
+                            "Failed to install " + descriptor->m_sName +
+                            " source: " + result.unwrapErr());
                         return;
                     }
                 }
@@ -225,21 +249,25 @@ namespace hyprload {
                 if (source->isUpToDate()) {
                     auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
 
-                    descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err("Source is up to date, skipping update...");
+                    descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err(
+                        "Source is up to date, skipping update...");
                     return;
                 }
 
-                auto result = source->update(descriptor->m_sName, descriptor->m_sHyprlandHeadersPath);
+                auto result =
+                    source->update(descriptor->m_sName, descriptor->m_sHyprlandHeadersPath);
 
                 if (result.isErr()) {
                     auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
 
-                    descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err("Failed to update " + descriptor->m_sName + ": " + result.unwrapErr());
+                    descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err(
+                        "Failed to update " + descriptor->m_sName + ": " + result.unwrapErr());
                     return;
                 }
                 auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
 
-                descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::ok(std::monostate());
+                descriptor->m_rResult =
+                    hyprload::Result<std::monostate, std::string>::ok(std::monostate());
             });
 
             thread.detach();
@@ -260,7 +288,8 @@ namespace hyprload {
         std::filesystem::path sessionPluginPath = getSessionBinariesPath().value();
 
         while (std::filesystem::exists(sessionPluginPath)) {
-            debug("Session plugin path already exists, possible guid collision, regenerating guid...");
+            debug("Session plugin path already exists, possible guid collision, regenerating "
+                  "guid...");
 
             m_sSessionGuid = generateSessionGuid();
 
@@ -276,7 +305,8 @@ namespace hyprload {
         debug("Creating lock file...");
 
         if (!lockSession()) {
-            debug("Failed to create lock file, something is seriously wrong, will not load plugins...");
+            debug("Failed to create lock file, something is seriously wrong, will not load "
+                  "plugins...");
 
             return;
         }
@@ -292,7 +322,8 @@ namespace hyprload {
 
                 pluginFiles.push_back(filename);
 
-                debug("Copying plugin: " + entry.path().string() + " to " + (sessionPluginPath / filename).string());
+                debug("Copying plugin: " + entry.path().string() + " to " +
+                      (sessionPluginPath / filename).string());
                 std::filesystem::copy(entry.path(), sessionPluginPath / filename);
             }
         }
@@ -326,8 +357,11 @@ namespace hyprload {
 
             std::string pluginPath = sessionPluginPath / plugin;
 
-            if (std::none_of(plugins.begin(), plugins.end(), [&pluginPath](CPlugin* plugin) { return plugin->path == pluginPath; })) {
-                debug("Plugin not found in plugin system, likely already unloaded, skipping unload...");
+            if (std::none_of(plugins.begin(), plugins.end(), [&pluginPath](CPlugin* plugin) {
+                    return plugin->path == pluginPath;
+                })) {
+                debug("Plugin not found in plugin system, likely already unloaded, skipping "
+                      "unload...");
                 continue;
             }
 
@@ -353,7 +387,8 @@ namespace hyprload {
 
         std::filesystem::remove_all(sessionPluginPath);
 
-        const std::vector<plugin::PluginRequirement>& requirements = config::g_pHyprloadConfig->getPlugins();
+        const std::vector<plugin::PluginRequirement>& requirements =
+            config::g_pHyprloadConfig->getPlugins();
 
         for (auto& entry : std::filesystem::directory_iterator(pluginBinariesPath)) {
             std::string filename = entry.path().filename();
@@ -361,7 +396,9 @@ namespace hyprload {
                 std::string pluginName = filename.substr(0, filename.find(".so"));
 
                 if (std::none_of(requirements.begin(), requirements.end(),
-                                 [&pluginName](const plugin::PluginRequirement& requirement) { return requirement.getName() == pluginName; })) {
+                                 [&pluginName](const plugin::PluginRequirement& requirement) {
+                                     return requirement.getName() == pluginName;
+                                 })) {
                     debug("Plugin " + pluginName + " not in requirements, removing...");
 
                     std::filesystem::remove(entry.path());
@@ -410,11 +447,13 @@ namespace hyprload {
         m_iSessionLock = tryCreateLock(lockFile);
 
         if (!m_iSessionLock.has_value()) {
-            debug("Lock file already exists, and is locked. Possible session guid collision, retry");
+            debug(
+                "Lock file already exists, and is locked. Possible session guid collision, retry");
 
             return false;
         } else if (m_iSessionLock.value() == -1) {
-            debug("Failed to create lock file, something is seriously wrong, will not load plugins...");
+            debug("Failed to create lock file, something is seriously wrong, will not load "
+                  "plugins...");
 
             return false;
         }
@@ -500,7 +539,9 @@ namespace hyprload {
                         releaseLock(lock.value());
                         std::filesystem::remove_all(entry.path());
                     } else {
-                        debug("Lock file exists, but is not locked (possible crash without unloading), removing session: " + sessionPath);
+                        debug("Lock file exists, but is not locked (possible crash without "
+                              "unloading), removing session: " +
+                              sessionPath);
 
                         releaseLock(lock.value());
                         std::filesystem::remove_all(entry.path());

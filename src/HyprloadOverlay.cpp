@@ -11,7 +11,8 @@
 
 namespace hyprload::overlay {
     CBezierCurve* getAnimationCurve() {
-        static SConfigValue* animationCurve = HyprlandAPI::getConfigValue(PHANDLE, c_overlayAnimationCurve);
+        static SConfigValue* animationCurve =
+            HyprlandAPI::getConfigValue(PHANDLE, c_overlayAnimationCurve);
 
         if (!animationCurve) {
             return nullptr;
@@ -23,7 +24,8 @@ namespace hyprload::overlay {
     }
 
     f32 getAnimationDuration() {
-        static SConfigValue* animationDuration = HyprlandAPI::getConfigValue(PHANDLE, c_overlayAnimationDuration);
+        static SConfigValue* animationDuration =
+            HyprlandAPI::getConfigValue(PHANDLE, c_overlayAnimationDuration);
 
         if (!animationDuration) {
             return 0.5f;
@@ -59,7 +61,8 @@ namespace hyprload::overlay {
             }
             g_pHyprRenderer->damageBox(&m_bLastDamage);
 
-            m_pCairoSurface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, pMonitor->vecPixelSize.x, pMonitor->vecPixelSize.y);
+            m_pCairoSurface = cairo_image_surface_create(
+                CAIRO_FORMAT_ARGB32, pMonitor->vecPixelSize.x, pMonitor->vecPixelSize.y);
             m_pCairo = cairo_create(m_pCairoSurface);
             m_pLastMonitor = pMonitor;
         }
@@ -121,9 +124,11 @@ namespace hyprload::overlay {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
 #endif
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pMonitor->vecPixelSize.x, pMonitor->vecPixelSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, DATA);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pMonitor->vecPixelSize.x, pMonitor->vecPixelSize.y,
+                     0, GL_RGBA, GL_UNSIGNED_BYTE, DATA);
 
-        wlr_box pMonBox = {0, 0, static_cast<int>(pMonitor->vecPixelSize.x), static_cast<int>(pMonitor->vecPixelSize.y)};
+        wlr_box pMonBox = {0, 0, static_cast<int>(pMonitor->vecPixelSize.x),
+                           static_cast<int>(pMonitor->vecPixelSize.y)};
         g_pHyprOpenGL->renderTexture(m_tTexture, &pMonBox, 1.f);
 
         m_bDamagedAfterLastDraw = false;
@@ -134,12 +139,14 @@ namespace hyprload::overlay {
         const auto SPACING = 10.f * SCALE;
         const auto HIGHLIGHTSIZE = 4.f * SCALE;
 
-        const auto FONTSIZE = std::clamp((int)(13.f * ((pMonitor->vecPixelSize.x * SCALE) / 1080.f)), 8, 40);
+        const auto FONTSIZE =
+            std::clamp((int)(13.f * ((pMonitor->vecPixelSize.x * SCALE) / 1080.f)), 8, 40);
 
         const auto MONSIZE = pMonitor->vecPixelSize;
         const auto pCurve = getAnimationCurve();
 
-        cairo_select_font_face(m_pCairo, "Hack Nerd Font", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+        cairo_select_font_face(m_pCairo, "Hack Nerd Font", CAIRO_FONT_SLANT_NORMAL,
+                               CAIRO_FONT_WEIGHT_NORMAL);
         cairo_set_font_size(m_pCairo, FONTSIZE);
 
         cairo_text_extents_t cairoExtents;
@@ -149,9 +156,12 @@ namespace hyprload::overlay {
 
         f32 animProgress;
         if (m_bDrawOverlay)
-            animProgress = m_fProgress > 0.99f ? 1.0f : getAnimationCurve()->getYForPoint(m_fProgress);
+            animProgress =
+                m_fProgress > 0.99f ? 1.0f : getAnimationCurve()->getYForPoint(m_fProgress);
         else
-            animProgress = m_fProgress > 0.99f ? 1.0f : 1.0f - getAnimationCurve()->getYForPoint(1.0f - m_fProgress);
+            animProgress = m_fProgress > 0.99f ?
+                1.0f :
+                1.0f - getAnimationCurve()->getYForPoint(1.0f - m_fProgress);
 
         const std::vector<std::string>& plugins = g_pHyprload->getLoadedPlugins();
         const i32 pluginCount = plugins.size();
@@ -161,24 +171,30 @@ namespace hyprload::overlay {
             // first rect (bg, col)
             cairo_text_extents(m_pCairo, plugin.c_str(), &cairoExtents);
 
-            cairo_set_source_rgba(m_pCairo, s_overlayBoxColor.r, s_overlayBoxColor.g, s_overlayBoxColor.b, s_overlayBoxColor.a);
+            cairo_set_source_rgba(m_pCairo, s_overlayBoxColor.r, s_overlayBoxColor.g,
+                                  s_overlayBoxColor.b, s_overlayBoxColor.a);
 
             const auto PLUGINTABSIZE = Vector2D{cairoExtents.width + 20, cairoExtents.height + 16};
 
-            const f32 pluginProgress = std::clamp(animProgress + (pluginCount - pluginIndex - 1) * (0.1f / pluginCount), 0.0f, 1.0f);
+            const f32 pluginProgress = std::clamp(
+                animProgress + (pluginCount - pluginIndex - 1) * (0.1f / pluginCount), 0.0f, 1.0f);
             const f32 scaledTabHeight = PLUGINTABSIZE.y * pluginProgress;
 
             // draw rects
-            cairo_rectangle(m_pCairo, offsetX, MONSIZE.y - scaledTabHeight, PLUGINTABSIZE.x, PLUGINTABSIZE.y);
+            cairo_rectangle(m_pCairo, offsetX, MONSIZE.y - scaledTabHeight, PLUGINTABSIZE.x,
+                            PLUGINTABSIZE.y);
             cairo_fill(m_pCairo);
 
-            cairo_set_source_rgba(m_pCairo, s_overlayBoxHighlight.r, s_overlayBoxHighlight.g, s_overlayBoxHighlight.b, s_overlayBoxHighlight.a);
+            cairo_set_source_rgba(m_pCairo, s_overlayBoxHighlight.r, s_overlayBoxHighlight.g,
+                                  s_overlayBoxHighlight.b, s_overlayBoxHighlight.a);
 
-            cairo_rectangle(m_pCairo, offsetX, MONSIZE.y - scaledTabHeight, PLUGINTABSIZE.x, HIGHLIGHTSIZE);
+            cairo_rectangle(m_pCairo, offsetX, MONSIZE.y - scaledTabHeight, PLUGINTABSIZE.x,
+                            HIGHLIGHTSIZE);
             cairo_fill(m_pCairo);
 
             // draw text
-            cairo_set_source_rgba(m_pCairo, s_overlayTextColor.r, s_overlayTextColor.g, s_overlayTextColor.b, s_overlayTextColor.a);
+            cairo_set_source_rgba(m_pCairo, s_overlayTextColor.r, s_overlayTextColor.g,
+                                  s_overlayTextColor.b, s_overlayTextColor.a);
             cairo_move_to(m_pCairo, offsetX + 10, MONSIZE.y - scaledTabHeight + FONTSIZE + 4);
             cairo_show_text(m_pCairo, plugin.c_str());
 
@@ -191,6 +207,9 @@ namespace hyprload::overlay {
             pluginIndex++;
         }
 
-        return wlr_box{(int)pMonitor->vecPosition.x, static_cast<int>((int)pMonitor->vecPosition.y + (int)pMonitor->vecSize.y - maxHeight), (int)offsetX, (int)maxHeight};
+        return wlr_box{
+            (int)pMonitor->vecPosition.x,
+            static_cast<int>((int)pMonitor->vecPosition.y + (int)pMonitor->vecSize.y - maxHeight),
+            (int)offsetX, (int)maxHeight};
     }
 }
