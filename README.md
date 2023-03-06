@@ -1,5 +1,6 @@
-# Hyprload
-A (WIP) [Hyprland](https://github.com/hyprwm/Hyprland) plugin manager
+![Hyprload](./assets/hyprload_header.svg)
+
+### A (WIP) [Hyprland](https://github.com/hyprwm/Hyprland) plugin manager
 
 # Features
 - [x] Loading plugins
@@ -26,9 +27,8 @@ The guide on compiling and installing Hyprland manually is on the [wiki](http://
     - `exec-once=$HOME/.local/share/hyprload/hyprload.sh`
 
 # Setup
-1. Before asking for plugins, should add the path to the Hyprland headers in the Hyprland config. [Config variables](#configuration)
-2. To have hyprload manage your plugin installation, create a `hyprload.toml` file (by default, next to your `hyprland.conf` config: `~/.config/hypr/hyprload.toml`
-3. Fill it out with the plugins you want. It consists of one array, named plugins, in which you can provide the installation source in various ways. Example:
+1. To have hyprload manage your plugin installation, create a `hyprload.toml` file (by default, next to your `hyprland.conf` config: `~/.config/hypr/hyprload.toml`
+2. Fill it out with the plugins you want. It consists of one array, named plugins, in which you can provide the installation source in various ways. Example:
 ```toml
 plugins = [
     # Installs the plugin from https://github.com/Duckonaut/split-monitor-workspaces
@@ -39,7 +39,7 @@ plugins = [
     { local = "/home/duckonaut/repos/split-monitor-workspaces" },
 ]
 ```
-4. Add keybinds to the `hyprload` dispatcher in your `hyprland.conf` for the functions you want.
+3. Add keybinds to the `hyprload` dispatcher in your `hyprland.conf` for the functions you want.
     - Possible values:
         - `load`: Loads all the plugins
         - `clear`: Unloads all the plugins
@@ -56,9 +56,9 @@ bind=SUPERSHIFT,O,hyprload,overlay
 
 ## Configuration
 The configuration of hyprload behavior is done in `hyprland.conf`, like a normal plugin
-| Name                                      | Type      | Default                       | Description                                       |
-|-------------------------------------------|-----------|-------------------------------|---------------------------------------------------|
-| `plugin:hyprload:quiet`                   | bool      | false                         | Whether to hide the notifications                 |
-| `plugin:hyprload:debug`                   | bool      | false                         | Whether to hide extra-special debug notifications |
-| `plugin:hyprload:config`                  | string    | `~/.config/hypr/hyprload.toml`| The path to your plugin requirements file         |
-| `plugin:hyprload:hyprload_headers`        | string    | `empty`                       | The path to your hyprland local source            |
+| Name                                      | Type      | Default                       | Description                                                   |
+|-------------------------------------------|-----------|-------------------------------|---------------------------------------------------------------|
+| `plugin:hyprload:quiet`                   | bool      | false                         | Whether to hide the notifications                             |
+| `plugin:hyprload:debug`                   | bool      | false                         | Whether to hide extra-special debug notifications             |
+| `plugin:hyprload:config`                  | string    | `~/.config/hypr/hyprload.toml`| The path to your plugin requirements file                     |
+| `plugin:hyprload:hyprload_headers`        | string    | `empty`                       | The path to the Hyprland source to force using as headers.    |
