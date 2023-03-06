@@ -1,10 +1,12 @@
 #include "globals.hpp"
+#include "types.hpp"
+#include "util.hpp"
 
 #include "HyprloadOverlay.hpp"
 #include "Hyprload.hpp"
-#include "types.hpp"
 
 #include <algorithm>
+
 #include <src/Compositor.hpp>
 #include <src/helpers/BezierCurve.hpp>
 #include <src/managers/AnimationManager.hpp>

@@ -1,60 +1,26 @@
 #pragma once
+#define WLR_USE_UNSTABLE
+#include "types.hpp"
+
 #include "HyprloadPlugin.hpp"
+#include "HyprloadOverlay.hpp"
+#include "BuildProcessDescriptor.hpp"
+
 #include <memory>
 #include <mutex>
 #include <variant>
-#define WLR_USE_UNSTABLE
-#include "HyprloadOverlay.hpp"
-#include "types.hpp"
-
 #include <string>
 #include <vector>
 #include <optional>
 #include <filesystem>
+#include <condition_variable>
 
 #include <src/helpers/Color.hpp>
 #include <src/helpers/Monitor.hpp>
 #include <src/render/Texture.hpp>
 
 namespace hyprload {
-    const CColor s_pluginColor = {0x98 / 255.0f, 0xc3 / 255.0f, 0x79 / 255.0f, 1.0f};
-    const CColor s_debugColor = {0x98 / 255.0f, 0x5f / 255.0f, 0xdd / 255.0f, 1.0f};
-
-    const std::string c_pluginRoot = "plugin:hyprload:root";
-    const std::string c_hyprlandHeaders = "plugin:hyprload:hyprland_headers";
-    const std::string c_pluginQuiet = "plugin:hyprload:quiet";
-    const std::string c_pluginDebug = "plugin:hyprload:debug";
-
-    std::filesystem::path getRootPath();
-    std::optional<std::filesystem::path> getHyprlandHeadersPath();
-    std::filesystem::path getPluginsPath();
-    std::filesystem::path getPluginBinariesPath();
-
-    bool isQuiet();
-    bool isDebug();
-
-    void log(const std::string& message, usize duration = 5000);
-    void debug(const std::string& message, usize duration = 5000);
-
-    std::optional<flock_t> tryCreateLock(const std::filesystem::path& path);
-    std::optional<flock_t> tryGetLock(const std::filesystem::path& path);
-    void releaseLock(flock_t lock);
-
     void tryCleanupPreviousSessions();
-
-    class BuildProcessDescriptor final {
-      public:
-        BuildProcessDescriptor(std::string&& name,
-                               std::shared_ptr<hyprload::plugin::PluginSource> source,
-                               const std::filesystem::path& hyprlandHeadersPath);
-
-        std::string m_sName;
-        std::shared_ptr<hyprload::plugin::PluginSource> m_pSource;
-        std::filesystem::path m_sHyprlandHeadersPath;
-
-        std::mutex m_mMutex;
-        std::optional<hyprload::Result<std::monostate, std::string>> m_rResult;
-    };
 
     class Hyprload final {
       public:
@@ -82,8 +48,8 @@ namespace hyprload {
 
       private:
         std::optional<std::filesystem::path> getSessionBinariesPath();
-
         std::string generateSessionGuid();
+        void setupHeaders();
 
         std::vector<std::string> m_vPlugins;
         std::optional<std::string> m_sSessionGuid;

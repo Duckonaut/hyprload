@@ -1,6 +1,9 @@
+#include "util.hpp"
+
 #include "HyprloadConfig.hpp"
 #include "Hyprload.hpp"
 #include "HyprloadPlugin.hpp"
+
 #include "toml/toml.hpp"
 
 #include <src/config/ConfigManager.hpp>

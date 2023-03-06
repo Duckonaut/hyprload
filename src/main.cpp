@@ -1,4 +1,5 @@
 #include "globals.hpp"
+#include "util.hpp"
 
 #include <src/Compositor.hpp>
 #include <src/render/Renderer.hpp>
@@ -133,7 +134,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     hyprload::log("Plugins loaded!");
 
-    return {"hyprload", "Hyprland plugin manager", "Duckonaut", "0.4.0"};
+    return {"hyprload", "Hyprland plugin manager", "Duckonaut", "0.5.0"};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {

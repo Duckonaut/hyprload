@@ -1,4 +1,8 @@
+#include "types.hpp"
+#include "util.hpp"
+
 #include "HyprloadPlugin.hpp"
+#include "Hyprload.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -9,31 +13,10 @@
 #include <variant>
 #include <vector>
 
-#include "Hyprload.hpp"
-#include "src/helpers/MiscFunctions.hpp"
+#include <src/helpers/MiscFunctions.hpp>
 #include "toml/toml.hpp"
-#include "types.hpp"
 
 namespace hyprload::plugin {
-    std::tuple<int, std::string> executeCommand(const std::string& command) {
-        std::string result = "";
-        FILE* pipe = popen(command.c_str(), "r");
-        if (!pipe) {
-            return std::make_tuple(-1, "Failed to execute command");
-        }
-
-        char buffer[128];
-        while (!feof(pipe)) {
-            if (fgets(buffer, 128, pipe) != nullptr) {
-                result += buffer;
-            }
-        }
-
-        int exit = pclose(pipe);
-
-        return std::make_tuple(exit, result);
-    }
-
     hyprload::Result<HyprloadManifest, std::string>
     getHyprloadManifest(const std::filesystem::path& sourcePath) {
         std::filesystem::path manifestPath = sourcePath / "hyprload.toml";
