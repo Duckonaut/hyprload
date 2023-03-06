@@ -147,7 +147,7 @@ namespace hyprload::overlay {
         const auto MONSIZE = pMonitor->vecPixelSize;
         const auto pCurve = getAnimationCurve();
 
-        cairo_select_font_face(m_pCairo, "Hack Nerd Font", CAIRO_FONT_SLANT_NORMAL,
+        cairo_select_font_face(m_pCairo, "sans-serif", CAIRO_FONT_SLANT_NORMAL,
                                CAIRO_FONT_WEIGHT_NORMAL);
         cairo_set_font_size(m_pCairo, FONTSIZE);
 
