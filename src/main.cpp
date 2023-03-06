@@ -22,6 +22,9 @@
 inline CFunctionHook* g_pRenderAllClientsForMonitorHook = nullptr;
 typedef void (*origRenderAllClientsForMonitor)(void*, const int&, timespec*);
 
+inline CFunctionHook* g_pTickHook = nullptr;
+typedef void (*origWlTick)(void*);
+
 // Do NOT change this function.
 APICALL EXPORT std::string PLUGIN_API_VERSION() {
     return HYPRLAND_API_VERSION;
@@ -31,6 +34,12 @@ void hkRenderAllClientsForMonitor(void* thisptr, const int& monitor, timespec* t
     (*(origRenderAllClientsForMonitor)g_pRenderAllClientsForMonitorHook->m_pOriginal)(thisptr, monitor, time);
 
     hyprload::overlay::g_pOverlay->drawOverlay(monitor, time);
+}
+
+void hkWlTick(void* thisptr) {
+    hyprload::g_pHyprload->handleTick();
+
+    (*(origWlTick)g_pTickHook->m_pOriginal)(thisptr);
 }
 
 void hyprloadDispatcher(std::string command) {
@@ -60,21 +69,31 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     std::string defaultPluginDir = home + std::string("/.local/share/hyprload/");
     std::string defaultConfigPath = home + std::string("/.config/hypr/hyprload.toml");
 
-    HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginRoot, SConfigValue{.strValue = defaultPluginDir});
-    HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_hyprlandHeaders, SConfigValue{.strValue = ""});
-    HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginQuiet, SConfigValue{.intValue = 0});
-    HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginDebug, SConfigValue{.intValue = 0});
+    bool configWasCreated = true;
 
-    HyprlandAPI::addConfigValue(PHANDLE, hyprload::overlay::c_overlayAnimationCurve, SConfigValue{.strValue = "default"});
-    HyprlandAPI::addConfigValue(PHANDLE, hyprload::overlay::c_overlayAnimationDuration, SConfigValue{.floatValue = 0.5});
+    configWasCreated = configWasCreated && HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginRoot, SConfigValue{.strValue = defaultPluginDir});
+    configWasCreated = configWasCreated && HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_hyprlandHeaders, SConfigValue{.strValue = STRVAL_EMPTY});
+    configWasCreated = configWasCreated && HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginQuiet, SConfigValue{.intValue = 0});
+    configWasCreated = configWasCreated && HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginDebug, SConfigValue{.intValue = 0});
 
-    HyprlandAPI::addConfigValue(PHANDLE, hyprload::config::c_pluginConfig, SConfigValue{.strValue = defaultConfigPath});
+    configWasCreated = configWasCreated && HyprlandAPI::addConfigValue(PHANDLE, hyprload::overlay::c_overlayAnimationCurve, SConfigValue{.strValue = STRVAL_EMPTY});
+    configWasCreated = configWasCreated && HyprlandAPI::addConfigValue(PHANDLE, hyprload::overlay::c_overlayAnimationDuration, SConfigValue{.floatValue = 0.5});
 
-    HyprlandAPI::addDispatcher(PHANDLE, "hyprload", hyprloadDispatcher);
+    configWasCreated = configWasCreated && HyprlandAPI::addConfigValue(PHANDLE, hyprload::config::c_pluginConfig, SConfigValue{.strValue = defaultConfigPath});
+
+    configWasCreated = configWasCreated && HyprlandAPI::addDispatcher(PHANDLE, "hyprload", hyprloadDispatcher);
+
+    if (!configWasCreated) {
+        hyprload::log("Failed to create config values!");
+    }
 
     g_pRenderAllClientsForMonitorHook = HyprlandAPI::createFunctionHook(PHANDLE, (void*)&CHyprRenderer::renderAllClientsForMonitor, (void*)&hkRenderAllClientsForMonitor);
 
     g_pRenderAllClientsForMonitorHook->hook();
+
+    g_pTickHook = HyprlandAPI::createFunctionHook(PHANDLE, (void*)&CAnimationManager::tick, (void*)&hkWlTick);
+
+    g_pTickHook->hook();
 
     HyprlandAPI::reloadConfig();
 
@@ -96,7 +115,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     hyprload::log("Plugins loaded!");
 
-    return {"hyprload", "Minimal hyprland plugin manager", "Duckonaut", "0.4.0"};
+    return {"hyprload", "Hyprland plugin manager", "Duckonaut", "0.4.0"};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {

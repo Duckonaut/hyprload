@@ -1,6 +1,8 @@
 #pragma once
 #include "HyprloadPlugin.hpp"
 #include <memory>
+#include <mutex>
+#include <variant>
 #define WLR_USE_UNSTABLE
 #include "HyprloadOverlay.hpp"
 #include "types.hpp"
@@ -40,9 +42,23 @@ namespace hyprload {
 
     void tryCleanupPreviousSessions();
 
-    class Hyprload {
+    class BuildProcessDescriptor final {
+        public:
+        BuildProcessDescriptor(std::string&& name, std::shared_ptr<hyprload::plugin::PluginSource> source, const std::filesystem::path& hyprlandHeadersPath);
+
+        std::string m_sName;
+        std::shared_ptr<hyprload::plugin::PluginSource> m_pSource;
+        std::filesystem::path m_sHyprlandHeadersPath;
+
+        std::mutex m_mMutex;
+        std::optional<hyprload::Result<std::monostate, std::string>> m_rResult;
+    };
+
+    class Hyprload final {
       public:
         Hyprload();
+
+        void handleTick();
 
         void installPlugins();
         void updatePlugins();
@@ -70,6 +86,9 @@ namespace hyprload {
         std::vector<std::string> m_vPlugins;
         std::optional<std::string> m_sSessionGuid;
         std::optional<flock_t> m_iSessionLock;
+
+        bool m_bIsBuilding = false;
+        std::vector<std::shared_ptr<BuildProcessDescriptor>> m_vBuildProcesses;
     };
 
     inline std::unique_ptr<Hyprload> g_pHyprload;

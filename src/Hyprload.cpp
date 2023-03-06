@@ -5,11 +5,13 @@
 #include "HyprloadConfig.hpp"
 #include "HyprloadOverlay.hpp"
 
+#include <mutex>
 #include <src/helpers/Monitor.hpp>
 #include <src/plugins/PluginSystem.hpp>
 #include <src/config/ConfigManager.hpp>
 #include <src/plugins/PluginAPI.hpp>
 
+#include <thread>
 #include <time.h>
 #include <random>
 #include <cstdlib>
@@ -19,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
+#include <variant>
 #include <vector>
 
 namespace hyprload {
@@ -31,9 +34,11 @@ namespace hyprload {
     std::optional<std::filesystem::path> getHyprlandHeadersPath() {
         static SConfigValue* hyprloadHeaders = HyprlandAPI::getConfigValue(PHANDLE, c_hyprlandHeaders);
 
-        if (hyprloadHeaders->strValue.empty()) {
+        if (hyprloadHeaders->strValue.empty() || hyprloadHeaders->strValue == STRVAL_EMPTY) {
             return std::nullopt;
         }
+
+        debug("Using Hyprland headers from: " + hyprloadHeaders->strValue);
 
         return std::filesystem::path(hyprloadHeaders->strValue);
     }
@@ -74,65 +79,170 @@ namespace hyprload {
         Debug::log(LOG, (' ' + debugMessage).c_str());
     }
 
+    BuildProcessDescriptor::BuildProcessDescriptor(std::string&& name, std::shared_ptr<hyprload::plugin::PluginSource> source, const std::filesystem::path& hyprlandHeadersPath) {
+        m_sName = std::move(name);
+        m_pSource = source;
+        m_sHyprlandHeadersPath = hyprlandHeadersPath;
+        m_rResult = std::nullopt;
+    }
+
     Hyprload::Hyprload() {
         m_sSessionGuid = std::nullopt;
         m_vPlugins = std::vector<std::string>();
+        m_vBuildProcesses = std::vector<std::shared_ptr<hyprload::BuildProcessDescriptor>>();
+    }
+
+    void Hyprload::handleTick() {
+        if (!m_bIsBuilding) {
+            return;
+        }
+
+        auto buildProcesses = m_vBuildProcesses;
+        for (auto bp : buildProcesses) {
+            if (bp->m_mMutex.try_lock()) {
+                if (bp->m_rResult.has_value()) {
+                    if (bp->m_rResult.value().isErr()) {
+                        log(bp->m_rResult.value().unwrapErr());
+                    } else {
+                        log("Successfully updated " + bp->m_sName);
+                    }
+                    m_vBuildProcesses.erase(std::remove(m_vBuildProcesses.begin(), m_vBuildProcesses.end(), bp), m_vBuildProcesses.end());
+                    debug("Build processes left: " + std::to_string(m_vBuildProcesses.size()));
+                }
+
+                bp->m_mMutex.unlock();
+            }
+        }
+
+        if (m_vBuildProcesses.empty()) {
+            m_bIsBuilding = false;
+            log("Finished updating all plugins");
+
+            reloadPlugins();
+        }
     }
 
     void Hyprload::installPlugins() {
+        if (m_bIsBuilding) {
+            log("Already updating plugins");
+            return;
+        }
+
+        m_bIsBuilding = true;
+
+        std::optional<std::filesystem::path> hyprlandHeadersPathMaybe = hyprload::getHyprlandHeadersPath();
+
+        if (!hyprlandHeadersPathMaybe.has_value()) {
+            hyprload::log("Could not find hyprland headers. Refer to https://github.com/Duckonaut/hyprload#Setup", 10000);
+            return;
+        }
+
+        std::filesystem::path hyprlandHeadersPath = hyprlandHeadersPathMaybe.value();
+
+        config::g_pHyprloadConfig->reloadConfig();
+
         const std::vector<plugin::PluginRequirement>& requirements = config::g_pHyprloadConfig->getPlugins();
 
         for (const plugin::PluginRequirement& plugin : requirements) {
-            auto source = plugin.getSource();
+            std::shared_ptr<hyprload::BuildProcessDescriptor> descriptor = std::make_shared<hyprload::BuildProcessDescriptor>(std::string(plugin.getName()), plugin.getSource(), hyprlandHeadersPath);
 
-            if (!source->isSourceAvailable()) {
-                auto result = source->installSource();
+            auto myDescriptor = descriptor;
+            m_vBuildProcesses.push_back(myDescriptor);
+
+            std::thread thread = std::thread([descriptor]() {
+                auto source = descriptor->m_pSource;
+
+                if (!source->isSourceAvailable()) {
+                    auto result = source->installSource();
+
+                    if (result.isErr()) {
+                        auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
+
+                        descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err("Failed to install " + descriptor->m_sName + " source: " + result.unwrapErr());
+                        return;
+                    }
+                }
+
+                auto result = source->build(descriptor->m_sName, descriptor->m_sHyprlandHeadersPath);
 
                 if (result.isErr()) {
-                    log("Failed to install " + plugin.getName() + " source: " + result.unwrapErr(), 2500);
-                    continue;
+                    auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
+
+                    descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err("Failed to build " + descriptor->m_sName + ": " + result.unwrapErr());
+                    return;
                 }
-            }
 
-            auto result = source->install(plugin.getName());
+                auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
 
-            if (result.isErr()) {
-                log("Failed to install " + plugin.getName() + ": " + result.unwrapErr(), 2500);
-                continue;
-            }
+                descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::ok(std::monostate());
+            });
 
-            log("Installed " + plugin.getName(), 2500);
+            thread.detach();
         }
     }
 
     void Hyprload::updatePlugins() {
+        if (m_bIsBuilding) {
+            log("Already updating plugins");
+            return;
+        }
+
+        m_bIsBuilding = true;
+
+        std::optional<std::filesystem::path> hyprlandHeadersPathMaybe = hyprload::getHyprlandHeadersPath();
+
+        if (!hyprlandHeadersPathMaybe.has_value()) {
+            hyprload::log("Could not find hyprland headers. Refer to https://github.com/Duckonaut/hyprload#Setup", 10000);
+            return;
+        }
+
+        std::filesystem::path hyprlandHeadersPath = hyprlandHeadersPathMaybe.value();
+
+        config::g_pHyprloadConfig->reloadConfig();
+
         const std::vector<plugin::PluginRequirement>& requirements = config::g_pHyprloadConfig->getPlugins();
 
         for (const plugin::PluginRequirement& plugin : requirements) {
-            auto source = plugin.getSource();
+            std::shared_ptr<hyprload::BuildProcessDescriptor> descriptor = std::make_shared<hyprload::BuildProcessDescriptor>(std::string(plugin.getName()), plugin.getSource(), hyprlandHeadersPath);
 
-            if (!source->isSourceAvailable()) {
-                auto result = source->installSource();
+            auto myDescriptor = descriptor;
+            m_vBuildProcesses.push_back(myDescriptor);
+
+            std::thread thread = std::thread([descriptor]() {
+                auto source = descriptor->m_pSource;
+
+                if (!source->isSourceAvailable()) {
+                    auto result = source->installSource();
+
+                    if (result.isErr()) {
+                        auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
+
+                        descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err("Failed to install " + descriptor->m_sName + " source: " + result.unwrapErr());
+                        return;
+                    }
+                }
+
+                if (source->isUpToDate()) {
+                    auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
+
+                    descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err("Source is up to date, skipping update...");
+                    return;
+                }
+
+                auto result = source->update(descriptor->m_sName, descriptor->m_sHyprlandHeadersPath);
 
                 if (result.isErr()) {
-                    log("Failed to install " + plugin.getName() + " source: " + result.unwrapErr(), 2500);
-                    continue;
+                    auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
+
+                    descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err("Failed to update " + descriptor->m_sName + ": " + result.unwrapErr());
+                    return;
                 }
-            }
+                auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
 
-            if (source->isUpToDate()) {
-                debug("Source is up to date, skipping update...");
-                continue;
-            }
+                descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::ok(std::monostate());
+            });
 
-            auto result = source->update(plugin.getName());
-
-            if (result.isErr()) {
-                log("Failed to update " + plugin.getName() + ": " + result.unwrapErr(), 10000);
-                continue;
-            }
-
-            log("Updated " + plugin.getName(), 2500);
+            thread.detach();
         }
     }
 

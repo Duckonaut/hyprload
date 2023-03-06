@@ -18,10 +18,13 @@ namespace hyprload::config {
       public:
         HyprloadConfig();
 
+        void reloadConfig();
         const toml::table& getConfig() const;
         const std::vector<hyprload::plugin::PluginRequirement>& getPlugins() const;
 
       private:
+        void parseConfig();
+
         std::unique_ptr<toml::table> m_pConfig;
         std::vector<hyprload::plugin::PluginRequirement> m_vPluginsWanted;
     };
