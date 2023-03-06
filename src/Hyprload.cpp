@@ -283,7 +283,7 @@ namespace hyprload {
 
             // Checkout to commit hash
             std::string command = "git -C " + hyprlandHeadersPath.string() + " fetch && git -C " +
-                hyprlandHeadersPath.string() + " checkout " + commitHash;
+                hyprlandHeadersPath.string() + " checkout " + commitHash + " --recurse-submodules";
 
             std::tuple<int, std::string> result = hyprload::executeCommand(command);
 
