@@ -1,6 +1,6 @@
 ![Hyprload](./assets/hyprload_header.svg)
 
-### A (WIP) [Hyprland](https://github.com/hyprwm/Hyprland) plugin manager
+### A [Hyprland](https://github.com/hyprwm/Hyprland) plugin manager
 
 # Features
 - [x] Loading plugins
@@ -9,21 +9,12 @@
     - [x] A unified plugin manifest format
     - [x] Installing from git
     - [x] Installing from local
-    - [ ] Installing from a url
-    - [ ] Self-hosting
+    - [X] Self-hosting
 
 # Installing
-Since Hyprland plugins don't have ABI guarantees, you *should* download the Hyprland source and compile it if you plan to use plugins.
-This ensures the compiler version is the same between the Hyprland build you're running, and the plugins you are using.
-
-The guide on compiling and installing Hyprland manually is on the [wiki](http://wiki.hyprland.org/Getting-Started/Installation/#manual-manual-build)
-
-## Steps
-1. Export the `HYPRLAND_HEADERS` variable to point to the root directory of the Hyprland repo
-    - `export HYPRLAND_HEADERS="$HOME/repos/Hyprland"`
-2. Install `hyprload`
-    - `make install`
-3. Add this to your config to initialize `hyprload`
+1. Install `hyprload`
+    - `curl https://raw.githubusercontent.com/Duckonaut/hyprload/main/install.sh | bash`
+2. Add this to your config to initialize `hyprload`
     - `exec-once=$HOME/.local/share/hyprload/hyprload.sh`
 
 # Setup
@@ -46,7 +37,7 @@ plugins = [
         - `reload`: Unloads then reloads all the plugins
         - `overlay`: Toggles an overlay showing your actively loaded plugins
         - `install`: Installs the required plugins from `hyprload.toml`
-        - `update`: Updates the required plugins from `hyprload.toml`
+        - `update`: Updates `hyprload` and the required plugins from `hyprload.toml`
     - Example:
 ```
 bind=SUPERSHIFT,R,hyprload,reload
