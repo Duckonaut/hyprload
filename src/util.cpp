@@ -1,3 +1,5 @@
+#include "src/SharedDefs.hpp"
+#include "src/plugins/PluginAPI.hpp"
 #include "types.hpp"
 #include "globals.hpp"
 #include "util.hpp"
@@ -60,10 +62,44 @@ namespace hyprload {
         return hyprloadDebug->intValue;
     }
 
-    void log(const std::string& message, usize duration) {
+    void info(const std::string& message, usize duration) {
         std::string logMessage = "[hyprload] " + message;
         if (!isQuiet()) {
-            HyprlandAPI::addNotification(PHANDLE, logMessage, s_pluginColor, duration);
+            HyprlandAPI::addNotificationV2(PHANDLE,
+                                           std::unordered_map<std::string, std::any>{
+                                               {"text", logMessage},
+                                               {"time", duration},
+                                               {"color", CColor(0)},
+                                               {"icon", eIcons::ICON_INFO},
+                                           });
+        }
+        Debug::log(LOG, (' ' + logMessage).c_str());
+    }
+
+    void success(const std::string& message, usize duration) {
+        std::string logMessage = "[hyprload] " + message;
+        if (!isQuiet()) {
+            HyprlandAPI::addNotificationV2(PHANDLE,
+                                           std::unordered_map<std::string, std::any>{
+                                               {"text", logMessage},
+                                               {"time", duration},
+                                               {"color", CColor(0)},
+                                               {"icon", eIcons::ICON_OK},
+                                           });
+        }
+        Debug::log(LOG, (' ' + logMessage).c_str());
+    }
+
+    void error(const std::string& message, usize duration) {
+        std::string logMessage = "[hyprload] " + message;
+        if (!isQuiet()) {
+            HyprlandAPI::addNotificationV2(PHANDLE,
+                                           std::unordered_map<std::string, std::any>{
+                                               {"text", logMessage},
+                                               {"time", duration},
+                                               {"color", CColor(0)},
+                                               {"icon", eIcons::ICON_ERROR},
+                                           });
         }
         Debug::log(LOG, (' ' + logMessage).c_str());
     }
@@ -71,7 +107,13 @@ namespace hyprload {
     void debug(const std::string& message, usize duration) {
         std::string debugMessage = "[hyprload] " + message;
         if (isDebug()) {
-            HyprlandAPI::addNotification(PHANDLE, debugMessage, s_debugColor, duration);
+            HyprlandAPI::addNotificationV2(PHANDLE,
+                                           std::unordered_map<std::string, std::any>{
+                                               {"text", debugMessage},
+                                               {"time", duration},
+                                               {"color", s_debugColor},
+                                               {"icon", eIcons::ICON_INFO},
+                                           });
         }
         Debug::log(LOG, (' ' + debugMessage).c_str());
     }

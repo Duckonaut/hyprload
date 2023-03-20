@@ -58,7 +58,7 @@ void hyprloadDispatcher(std::string command) {
     } else if (command == "overlay") {
         hyprload::overlay::g_pOverlay->toggleDrawOverlay();
     } else {
-        hyprload::log("Unknown command: " + command);
+        hyprload::error("Unknown command: " + command);
     }
 }
 
@@ -99,7 +99,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         configWasCreated && HyprlandAPI::addDispatcher(PHANDLE, "hyprload", hyprloadDispatcher);
 
     if (!configWasCreated) {
-        hyprload::log("Failed to create config values!");
+        hyprload::error("Failed to create config values!");
     }
 
     g_pRenderAllClientsForMonitorHook =
@@ -117,9 +117,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     hyprload::config::g_pHyprloadConfig = std::make_unique<hyprload::config::HyprloadConfig>();
 
-    hyprload::log("Initialized successfully!");
+    hyprload::success("Initialized successfully!");
 
-    hyprload::log("Cleaning up old sessions...");
+    hyprload::info("Cleaning up old sessions...");
 
     hyprload::tryCleanupPreviousSessions();
 
@@ -128,11 +128,11 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
                         "\n\tBinary Path: " + plugin.getBinaryPath().string());
     }
 
-    hyprload::log("Loading plugins...");
+    hyprload::info("Loading plugins...");
 
     hyprload::g_pHyprload->loadPlugins();
 
-    hyprload::log("Plugins loaded!");
+    hyprload::success("Plugins loaded!");
 
     return {"hyprload", "Hyprland plugin manager", "Duckonaut", "0.5.0"};
 }

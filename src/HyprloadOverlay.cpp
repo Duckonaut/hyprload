@@ -159,7 +159,7 @@ namespace hyprload::overlay {
         f32 animProgress;
         if (m_bDrawOverlay)
             animProgress =
-                m_fProgress > 0.99f ? 1.0f : getAnimationCurve()->getYForPoint(m_fProgress);
+                m_fProgress > 0.99f ? 1.0f : pCurve->getYForPoint(m_fProgress);
         else
             animProgress = m_fProgress > 0.99f ?
                 1.0f :

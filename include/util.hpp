@@ -24,7 +24,9 @@ namespace hyprload {
     bool isQuiet();
     bool isDebug();
 
-    void log(const std::string& message, usize duration = 5000);
+    void info(const std::string& message, usize duration = 5000);
+    void success(const std::string& message, usize duration = 5000);
+    void error(const std::string& message, usize duration = 5000);
     void debug(const std::string& message, usize duration = 5000);
 
     std::optional<flock_t> tryCreateLock(const std::filesystem::path& path);

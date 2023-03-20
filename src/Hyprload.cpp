@@ -39,9 +39,9 @@ namespace hyprload {
             if (bp->m_mMutex.try_lock()) {
                 if (bp->m_rResult.has_value()) {
                     if (bp->m_rResult.value().isErr()) {
-                        log(bp->m_rResult.value().unwrapErr());
+                        error(bp->m_rResult.value().unwrapErr());
                     } else {
-                        log("Successfully updated " + bp->m_sName);
+                        success("Successfully updated " + bp->m_sName);
                     }
                     m_vBuildProcesses.erase(
                         std::remove(m_vBuildProcesses.begin(), m_vBuildProcesses.end(), bp),
@@ -55,7 +55,7 @@ namespace hyprload {
 
         if (m_vBuildProcesses.empty()) {
             m_bIsBuilding = false;
-            log("Finished updating all plugins");
+            success("Finished updating all plugins");
 
             reloadPlugins();
         }
@@ -63,7 +63,7 @@ namespace hyprload {
 
     void Hyprload::installPlugins() {
         if (m_bIsBuilding) {
-            log("Already updating plugins");
+            error("Already updating plugins");
             return;
         }
 
@@ -145,7 +145,7 @@ namespace hyprload {
 
     void Hyprload::updatePlugins() {
         if (m_bIsBuilding) {
-            log("Already updating plugins");
+            error("Already updating plugins");
             return;
         }
 
@@ -161,6 +161,70 @@ namespace hyprload {
         }
 
         std::filesystem::path hyprlandHeadersPath = getHyprlandHeadersPath();
+
+        // update self
+
+        std::shared_ptr<hyprload::BuildProcessDescriptor> descriptor =
+            std::make_shared<hyprload::BuildProcessDescriptor>(
+                "hyprload", std::make_shared<plugin::SelfSource>(), hyprlandHeadersPath);
+
+        auto myDescriptor = descriptor;
+        m_vBuildProcesses.push_back(myDescriptor);
+
+        std::thread thread = std::thread([descriptor]() {
+            std::unique_lock<std::mutex> headerLock = std::unique_lock(g_mSetupHeadersMutex);
+            g_cvSetupHeaders.wait(headerLock, []() { return g_bHeadersReady.has_value(); });
+
+            if (g_bHeadersReady.value().isOk()) {
+                headerLock.unlock();
+            } else {
+                auto lock = std::unique_lock<std::mutex>(descriptor->m_mMutex);
+
+                descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err(
+                    "Failed to setup Hyprland headers");
+                return;
+            }
+
+            auto source = descriptor->m_pSource;
+
+            if (!source->isSourceAvailable()) {
+                auto result = source->installSource();
+
+                if (result.isErr()) {
+                    auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
+
+                    descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err(
+                        "Failed to install " + descriptor->m_sName +
+                        " source: " + result.unwrapErr());
+                    return;
+                }
+            }
+
+            if (source->isUpToDate()) {
+                auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
+
+                descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err(
+                    "Source is up to date, skipping update...");
+                return;
+            }
+
+            auto result = source->update(descriptor->m_sName, descriptor->m_sHyprlandHeadersPath);
+
+            if (result.isErr()) {
+                auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
+
+                descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err(
+                    "Failed to build " + descriptor->m_sName + ": " + result.unwrapErr());
+                return;
+            }
+
+            auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
+
+            descriptor->m_rResult =
+                hyprload::Result<std::monostate, std::string>::ok(std::monostate());
+        });
+
+        thread.detach();
 
         config::g_pHyprloadConfig->reloadConfig();
 
@@ -236,10 +300,9 @@ namespace hyprload {
         std::string hyprlandVersion = HyprlandAPI::invokeHyprctlCommand("version", {}, "j");
         debug("Hyprland version: " + hyprlandVersion);
 
-
         usize hyprlandVersionStart = hyprlandVersion.find("\"commit\": \"");
         if (hyprlandVersionStart == std::string::npos) {
-            log("Failed to find commit hash in Hyprland version");
+            error("Failed to find commit hash in Hyprland version");
             return;
         }
         std::string commitHash = hyprlandVersion.substr(hyprlandVersionStart + 11, 40);
@@ -267,8 +330,8 @@ namespace hyprload {
 
                 const std::string hyprlandUrl = "https://github.com/hyprwm/Hyprland.git";
 
-                std::string command =
-                    "git clone " + hyprlandUrl + " " + hyprlandHeadersPath.string() + " --recurse-submodules --depth 1";
+                std::string command = "git clone " + hyprlandUrl + " " +
+                    hyprlandHeadersPath.string() + " --recurse-submodules --depth 1";
 
                 std::tuple<int, std::string> result = hyprload::executeCommand(command);
 
@@ -310,8 +373,7 @@ namespace hyprload {
 
             debug("Hyprland headers ready");
 
-            g_bHeadersReady =
-                hyprload::Result<std::monostate, std::string>::ok(std::monostate());
+            g_bHeadersReady = hyprload::Result<std::monostate, std::string>::ok(std::monostate());
             headerLock.unlock();
             g_cvSetupHeaders.notify_all();
         });
@@ -320,237 +382,236 @@ namespace hyprload {
     }
 
     void Hyprload::loadPlugins() {
-            if (m_sSessionGuid.has_value()) {
-                debug("Session guid already exists, will not load plugins...");
-                return;
-            }
+        if (m_sSessionGuid.has_value()) {
+            debug("Session guid already exists, will not load plugins...");
+            return;
+        }
+
+        m_sSessionGuid = generateSessionGuid();
+
+        debug("Session guid: " + m_sSessionGuid.value());
+
+        std::filesystem::path sourcePluginPath = getPluginBinariesPath();
+        std::filesystem::path sessionPluginPath = getSessionBinariesPath().value();
+
+        while (std::filesystem::exists(sessionPluginPath)) {
+            debug("Session plugin path already exists, possible guid collision, regenerating "
+                  "guid...");
 
             m_sSessionGuid = generateSessionGuid();
 
             debug("Session guid: " + m_sSessionGuid.value());
 
-            std::filesystem::path sourcePluginPath = getPluginBinariesPath();
-            std::filesystem::path sessionPluginPath = getSessionBinariesPath().value();
+            sessionPluginPath = getSessionBinariesPath().value();
+        }
 
-            while (std::filesystem::exists(sessionPluginPath)) {
-                debug("Session plugin path already exists, possible guid collision, regenerating "
-                      "guid...");
+        debug("Creating session plugin path: " + sessionPluginPath.string());
 
-                m_sSessionGuid = generateSessionGuid();
+        std::filesystem::create_directories(sessionPluginPath);
 
-                debug("Session guid: " + m_sSessionGuid.value());
+        debug("Creating lock file...");
 
-                sessionPluginPath = getSessionBinariesPath().value();
+        if (!lockSession()) {
+            debug("Failed to create lock file, something is seriously wrong, will not load "
+                  "plugins...");
+
+            return;
+        }
+
+        debug("Copying plugins...");
+
+        std::vector<std::string> pluginFiles = std::vector<std::string>();
+
+        for (const auto& entry : std::filesystem::directory_iterator(sourcePluginPath)) {
+            std::string filename = entry.path().filename();
+            if (filename.find(".so") != std::string::npos) {
+                debug("Discovered plugin: " + filename);
+
+                pluginFiles.push_back(filename);
+
+                debug("Copying plugin: " + entry.path().string() + " to " +
+                      (sessionPluginPath / filename).string());
+                std::filesystem::copy(entry.path(), sessionPluginPath / filename);
             }
+        }
 
-            debug("Creating session plugin path: " + sessionPluginPath.string());
+        for (auto& plugin : pluginFiles) {
+            info("Loading plugin: " + plugin);
 
-            std::filesystem::create_directories(sessionPluginPath);
+            std::string pluginPath = sessionPluginPath / plugin;
 
-            debug("Creating lock file...");
+            HyprlandAPI::invokeHyprctlCommand("plugin", "load " + pluginPath);
 
-            if (!lockSession()) {
-                debug("Failed to create lock file, something is seriously wrong, will not load "
-                      "plugins...");
-
-                return;
-            }
-
-            debug("Copying plugins...");
-
-            std::vector<std::string> pluginFiles = std::vector<std::string>();
-
-            for (const auto& entry : std::filesystem::directory_iterator(sourcePluginPath)) {
-                std::string filename = entry.path().filename();
-                if (filename.find(".so") != std::string::npos) {
-                    debug("Discovered plugin: " + filename);
-
-                    pluginFiles.push_back(filename);
-
-                    debug("Copying plugin: " + entry.path().string() + " to " +
-                          (sessionPluginPath / filename).string());
-                    std::filesystem::copy(entry.path(), sessionPluginPath / filename);
-                }
-            }
-
-            for (auto& plugin : pluginFiles) {
-                log("Loading plugin: " + plugin);
-
-                std::string pluginPath = sessionPluginPath / plugin;
-
-                HyprlandAPI::invokeHyprctlCommand("plugin", "load " + pluginPath);
-
-                m_vPlugins.push_back(plugin);
-            }
+            m_vPlugins.push_back(plugin);
+        }
     }
 
     void Hyprload::clearPlugins() {
-            if (!m_sSessionGuid.has_value()) {
-                debug("Session guid does not exist, will not clear plugins...");
-                return;
+        if (!m_sSessionGuid.has_value()) {
+            debug("Session guid does not exist, will not clear plugins...");
+            return;
+        }
+
+        std::filesystem::path sessionPluginPath = getSessionBinariesPath().value();
+        std::vector<CPlugin*> plugins = g_pPluginSystem->getAllPlugins();
+
+        debug("Plugin count: " + std::to_string(plugins.size()));
+
+        std::vector<std::string> pluginFiles = std::vector<std::string>();
+
+        for (auto& plugin : m_vPlugins) {
+            info("Unloading plugin: " + plugin);
+
+            std::string pluginPath = sessionPluginPath / plugin;
+
+            if (std::none_of(plugins.begin(), plugins.end(), [&pluginPath](CPlugin* plugin) {
+                    return plugin->path == pluginPath;
+                })) {
+                debug("Plugin not found in plugin system, likely already unloaded, skipping "
+                      "unload...");
+                continue;
             }
 
-            std::filesystem::path sessionPluginPath = getSessionBinariesPath().value();
-            std::vector<CPlugin*> plugins = g_pPluginSystem->getAllPlugins();
+            pluginFiles.push_back(plugin);
+        }
 
-            debug("Plugin count: " + std::to_string(plugins.size()));
+        for (auto& plugin : pluginFiles) {
+            HyprlandAPI::invokeHyprctlCommand("plugin", "unload " + plugin);
+        }
 
-            std::vector<std::string> pluginFiles = std::vector<std::string>();
-
-            for (auto& plugin : m_vPlugins) {
-                log("Unloading plugin: " + plugin);
-
-                std::string pluginPath = sessionPluginPath / plugin;
-
-                if (std::none_of(plugins.begin(), plugins.end(), [&pluginPath](CPlugin* plugin) {
-                        return plugin->path == pluginPath;
-                    })) {
-                    debug("Plugin not found in plugin system, likely already unloaded, skipping "
-                          "unload...");
-                    continue;
-                }
-
-                pluginFiles.push_back(plugin);
-            }
-
-            for (auto& plugin : pluginFiles) {
-                HyprlandAPI::invokeHyprctlCommand("plugin", "unload " + plugin);
-            }
-
-            cleanupPlugin();
+        cleanupPlugin();
     }
 
     void Hyprload::cleanupPlugin() {
-            std::filesystem::path sessionPluginPath = getSessionBinariesPath().value();
-            std::filesystem::path pluginBinariesPath = getPluginBinariesPath();
+        std::filesystem::path sessionPluginPath = getSessionBinariesPath().value();
+        std::filesystem::path pluginBinariesPath = getPluginBinariesPath();
 
-            m_vPlugins.clear();
+        m_vPlugins.clear();
 
-            debug("Removing lock file...");
+        debug("Removing lock file...");
 
-            unlockSession();
+        unlockSession();
 
-            std::filesystem::remove_all(sessionPluginPath);
+        std::filesystem::remove_all(sessionPluginPath);
 
-            const std::vector<plugin::PluginRequirement>& requirements =
-                config::g_pHyprloadConfig->getPlugins();
+        const std::vector<plugin::PluginRequirement>& requirements =
+            config::g_pHyprloadConfig->getPlugins();
 
-            for (auto& entry : std::filesystem::directory_iterator(pluginBinariesPath)) {
-                std::string filename = entry.path().filename();
-                if (filename.find(".so") != std::string::npos) {
-                    std::string pluginName = filename.substr(0, filename.find(".so"));
+        for (auto& entry : std::filesystem::directory_iterator(pluginBinariesPath)) {
+            std::string filename = entry.path().filename();
+            if (filename.find(".so") != std::string::npos) {
+                std::string pluginName = filename.substr(0, filename.find(".so"));
 
-                    if (std::none_of(requirements.begin(), requirements.end(),
-                                     [&pluginName](const plugin::PluginRequirement& requirement) {
-                                         return requirement.getName() == pluginName;
-                                     })) {
-                        debug("Plugin " + pluginName + " not in requirements, removing...");
+                if (std::none_of(requirements.begin(), requirements.end(),
+                                 [&pluginName](const plugin::PluginRequirement& requirement) {
+                                     return requirement.getName() == pluginName;
+                                 })) {
+                    debug("Plugin " + pluginName + " not in requirements, removing...");
 
-                        std::filesystem::remove(entry.path());
-                    }
+                    std::filesystem::remove(entry.path());
                 }
             }
+        }
 
-            m_sSessionGuid = std::nullopt;
+        m_sSessionGuid = std::nullopt;
     }
 
     void Hyprload::reloadPlugins() {
-            log("Reloading plugins...");
+        info("Reloading plugins...");
 
-            clearPlugins();
-            loadPlugins();
+        clearPlugins();
+        loadPlugins();
 
-            log("Reloaded plugins!");
+        success("Reloaded plugins!");
     }
 
     const std::vector<std::string>& Hyprload::getLoadedPlugins() const {
-            return m_vPlugins;
+        return m_vPlugins;
     }
 
     std::string Hyprload::generateSessionGuid() {
-            std::string guid = std::string();
-            std::srand(std::time(nullptr));
+        std::string guid = std::string();
+        std::srand(std::time(nullptr));
 
-            for (usize i = 0; i < 16; i++) {
-                guid += std::to_string(rand() % 10);
-            }
+        for (usize i = 0; i < 16; i++) {
+            guid += std::to_string(rand() % 10);
+        }
 
-            return guid;
+        return guid;
     }
 
     std::optional<std::filesystem::path> Hyprload::getSessionBinariesPath() {
-            if (!m_sSessionGuid.has_value()) {
-                return std::nullopt;
-            }
+        if (!m_sSessionGuid.has_value()) {
+            return std::nullopt;
+        }
 
-            return getPluginsPath() / ("session." + m_sSessionGuid.value());
+        return getPluginsPath() / ("session." + m_sSessionGuid.value());
     }
 
     bool Hyprload::lockSession() {
-            std::filesystem::path lockFile = getSessionBinariesPath().value() / "lock";
+        std::filesystem::path lockFile = getSessionBinariesPath().value() / "lock";
 
-            m_iSessionLock = tryCreateLock(lockFile);
+        m_iSessionLock = tryCreateLock(lockFile);
 
-            if (!m_iSessionLock.has_value()) {
-                debug("Lock file already exists, and is locked. Possible session guid collision, "
-                      "retry");
+        if (!m_iSessionLock.has_value()) {
+            debug("Lock file already exists, and is locked. Possible session guid collision, "
+                  "retry");
 
-                return false;
-            } else if (m_iSessionLock.value() == -1) {
-                debug("Failed to create lock file, something is seriously wrong, will not load "
-                      "plugins...");
+            return false;
+        } else if (m_iSessionLock.value() == -1) {
+            debug("Failed to create lock file, something is seriously wrong, will not load "
+                  "plugins...");
 
-                return false;
-            }
+            return false;
+        }
 
-            return true;
+        return true;
     }
 
     void Hyprload::unlockSession() {
-            std::filesystem::path lockFile = getSessionBinariesPath().value() / "lock";
+        std::filesystem::path lockFile = getSessionBinariesPath().value() / "lock";
 
-            if (m_iSessionLock.has_value()) {
-                releaseLock(m_iSessionLock.value());
-            }
+        if (m_iSessionLock.has_value()) {
+            releaseLock(m_iSessionLock.value());
+        }
 
-            if (std::filesystem::exists(lockFile)) {
-                std::filesystem::remove(lockFile);
-            }
+        if (std::filesystem::exists(lockFile)) {
+            std::filesystem::remove(lockFile);
+        }
     }
 
     void tryCleanupPreviousSessions() {
-            std::filesystem::path pluginsPath = getPluginsPath();
+        std::filesystem::path pluginsPath = getPluginsPath();
 
-            for (const auto& entry : std::filesystem::directory_iterator(pluginsPath)) {
-                std::string sessionPath = entry.path().filename();
-                if (sessionPath.find("session.") != std::string::npos) {
-                    debug("Found previous session: " + sessionPath);
+        for (const auto& entry : std::filesystem::directory_iterator(pluginsPath)) {
+            std::string sessionPath = entry.path().filename();
+            if (sessionPath.find("session.") != std::string::npos) {
+                debug("Found previous session: " + sessionPath);
 
-                    std::filesystem::path lockFile = entry.path() / "lock";
-                    if (std::filesystem::exists(lockFile)) {
-                        std::optional<int> lock = tryGetLock(lockFile);
+                std::filesystem::path lockFile = entry.path() / "lock";
+                if (std::filesystem::exists(lockFile)) {
+                    std::optional<int> lock = tryGetLock(lockFile);
 
-                        if (!lock.has_value()) {
-                            debug("Lock file exists, and is locked, skipping session: " +
-                                  sessionPath);
-                        } else if (lock.value() == -1) {
-                            debug("Failed to get lock file, something is wrong...");
+                    if (!lock.has_value()) {
+                        debug("Lock file exists, and is locked, skipping session: " + sessionPath);
+                    } else if (lock.value() == -1) {
+                        debug("Failed to get lock file, something is wrong...");
 
-                            releaseLock(lock.value());
-                            std::filesystem::remove_all(entry.path());
-                        } else {
-                            debug("Lock file exists, but is not locked (possible crash without "
-                                  "unloading), removing session: " +
-                                  sessionPath);
-
-                            releaseLock(lock.value());
-                            std::filesystem::remove_all(entry.path());
-                        }
+                        releaseLock(lock.value());
+                        std::filesystem::remove_all(entry.path());
                     } else {
-                        debug("Lock file does not exist, removing session: " + sessionPath);
+                        debug("Lock file exists, but is not locked (possible crash without "
+                              "unloading), removing session: " +
+                              sessionPath);
+
+                        releaseLock(lock.value());
                         std::filesystem::remove_all(entry.path());
                     }
+                } else {
+                    debug("Lock file does not exist, removing session: " + sessionPath);
+                    std::filesystem::remove_all(entry.path());
                 }
             }
+        }
     }
-    }
+}

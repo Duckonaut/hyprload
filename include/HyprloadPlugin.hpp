@@ -112,6 +112,26 @@ namespace hyprload::plugin {
         std::filesystem::path m_pSourcePath;
     };
 
+    class SelfSource : public PluginSource {
+      public:
+        SelfSource();
+
+        hyprload::Result<std::monostate, std::string> installSource() override;
+        bool isSourceAvailable() override;
+        bool isUpToDate() override;
+        bool providesPlugin(const std::string& name) const override;
+
+        hyprload::Result<std::monostate, std::string>
+        update(const std::string& name, const std::filesystem::path& hyprlandHeaders) override;
+        hyprload::Result<std::monostate, std::string>
+        build(const std::string& name, const std::filesystem::path& hyprlandHeaders) override;
+        hyprload::Result<std::monostate, std::string>
+        install(const std::string& name, const std::filesystem::path& hyprlandHeaders) override;
+
+      protected:
+        bool isEquivalent(const PluginSource& other) const override;
+    };
+
     class PluginRequirement {
       public:
         PluginRequirement(const toml::table& plugin);

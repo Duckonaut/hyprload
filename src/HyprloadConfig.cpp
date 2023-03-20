@@ -20,7 +20,7 @@ namespace hyprload::config {
             m_pConfig = std::make_unique<toml::table>(toml::parse_file(getConfigPath().u8string()));
         } catch (const std::exception& e) {
             const std::string error = e.what();
-            hyprload::log("Failed to parse config file: " + error);
+            hyprload::error("Failed to parse config file: " + error);
         }
 
         if (m_pConfig->contains("plugins") && m_pConfig->get("plugins")->is_array()) {
@@ -33,10 +33,10 @@ namespace hyprload::config {
                             plugins.emplace_back(*value.as_table());
                         } catch (const std::exception& e) {
                             const std::string error = e.what();
-                            hyprload::log("Failed to parse plugin: " + error);
+                            hyprload::error("Failed to parse plugin: " + error);
                         }
                     } else {
-                        hyprload::log("Plugin must be a string or table");
+                        hyprload::error("Plugin must be a string or table");
                     }
                 });
         }
@@ -50,7 +50,7 @@ namespace hyprload::config {
             m_pConfig = std::make_unique<toml::table>(toml::parse_file(getConfigPath().u8string()));
         } catch (const std::exception& e) {
             const std::string error = e.what();
-            hyprload::log("Failed to parse config file: " + error);
+            hyprload::error("Failed to parse config file: " + error);
         }
 
         if (m_pConfig->contains("plugins") && m_pConfig->get("plugins")->is_array()) {
@@ -63,10 +63,10 @@ namespace hyprload::config {
                             plugins.emplace_back(*value.as_table());
                         } catch (const std::exception& e) {
                             const std::string error = e.what();
-                            hyprload::log("Failed to parse plugin: " + error);
+                            hyprload::error("Failed to parse plugin: " + error);
                         }
                     } else {
-                        hyprload::log("Plugin must be a string or table");
+                        hyprload::error("Plugin must be a string or table");
                     }
                 });
         }

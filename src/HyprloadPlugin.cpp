@@ -406,6 +406,89 @@ namespace hyprload::plugin {
         return m_pSourcePath == otherLocal.m_pSourcePath;
     }
 
+    SelfSource::SelfSource() {}
+
+    hyprload::Result<std::monostate, std::string> SelfSource::installSource() {
+        std::string command = "git clone https://github.com/Duckonaut/hyprload.git " +
+            getRootPath().string() + "/src";
+
+        if (std::system(command.c_str()) != 0) {
+            return hyprload::Result<std::monostate, std::string>::err("Failed to clone own source");
+        }
+
+        return hyprload::Result<std::monostate, std::string>::ok(std::monostate());
+    }
+
+    bool SelfSource::isSourceAvailable() {
+        return std::filesystem::exists(getRootPath() / "src" / ".git");
+    }
+
+    bool SelfSource::isUpToDate() {
+        std::filesystem::path sourcePath = getRootPath() / "src";
+        std::string command = "git -C " + sourcePath.string() + " remote update";
+
+        if (std::system(command.c_str()) != 0) {
+            return false;
+        }
+
+        command = "git -C " + sourcePath.string() + " status -uno";
+
+        auto [exit, output] = executeCommand(command);
+
+        return exit != 0 && output.find("behind") == std::string::npos;
+    }
+
+    bool SelfSource::providesPlugin(const std::string&) const {
+        return false; // Don't provide any plugins.
+    }
+
+    hyprload::Result<std::monostate, std::string>
+    SelfSource::update(const std::string& name, const std::filesystem::path& hyprlandHeaders) {
+        std::string command = "git -C " + (getRootPath() / "src").string() + " pull";
+
+        if (std::system(command.c_str()) != 0) {
+            return hyprload::Result<std::monostate, std::string>::err(
+                "Failed to update own source");
+        }
+
+        return this->install(name, hyprlandHeaders);
+    }
+
+    hyprload::Result<std::monostate, std::string>
+    SelfSource::install(const std::string& name, const std::filesystem::path& hyprlandHeaders) {
+        if (!this->isSourceAvailable()) {
+            return this->installSource();
+        }
+
+        auto result = build(name, hyprlandHeaders);
+
+        if (result.isErr()) {
+            return result;
+        }
+
+        return hyprload::Result<std::monostate, std::string>::ok(std::monostate());
+    }
+
+    hyprload::Result<std::monostate, std::string>
+    SelfSource::build(const std::string&, const std::filesystem::path& hyprlandHeaders) {
+        std::string buildSteps = "export HYPRLAND_HEADERS=" + hyprlandHeaders.string() +
+            " && make -C " + (getRootPath() / "src").string() + " install";
+
+        auto [exit, output] = executeCommand(buildSteps);
+
+        if (exit != 0) {
+            return hyprload::Result<std::monostate, std::string>::err("Failed to build self: " +
+                                                                      output);
+        }
+
+        return hyprload::Result<std::monostate, std::string>::ok(std::monostate());
+    }
+
+    bool SelfSource::isEquivalent(const PluginSource&) const {
+        return false; // Assume that the self source is different from everything else. It's
+                      // probably not a good idea to have multiple self sources, ever.
+    }
+
     PluginRequirement::PluginRequirement(const toml::table& plugin) {
         std::string source;
 
