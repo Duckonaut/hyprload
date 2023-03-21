@@ -18,11 +18,11 @@ all: check_env $(PLUGIN_NAME).so
 
 install: all
 	mkdir -p $(INSTALL_PATH)plugins/bin
-	cp $(PLUGIN_NAME).sh $(INSTALL_PATH)
+	cp $(PLUGIN_NAME).sh "$(INSTALL_PATH)$(PLUGIN_NAME).sh"
 	@if [ -f "$(INSTALL_PATH)$(PLUGIN_NAME).so" ]; then\
 		cp $(PLUGIN_NAME).so "$(INSTALL_PATH)$(PLUGIN_NAME).so.update";\
 	else\
-		cp $(PLUGIN_NAME).so $(INSTALL_PATH);\
+		cp $(PLUGIN_NAME).so "$(INSTALL_PATH)$(PLUGIN_NAME).so";\
 	fi
 
 check_env:
