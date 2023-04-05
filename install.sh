@@ -26,7 +26,7 @@ progress "[3/7] Setting up hyprland source in $HYPRLAND_PATH"
 if [ -d "$HYPRLAND_PATH" ]; then
     git -C "$HYPRLAND_PATH" pull
 else
-    git clone https://github.com/hyprwm/Hyprland.git "$HYPRLAND_PATH" --recursive
+    git clone https://github.com/hyprwm/Hyprland.git "$HYPRLAND_PATH" --recursive --depth 1
 fi
 
 HYPRLAND_COMMIT=""
