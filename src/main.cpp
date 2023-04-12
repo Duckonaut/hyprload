@@ -96,7 +96,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     if (hyprload::g_pHyprload->checkIfHyprloadFullyCompatible()) {
         g_pRenderLockscreenHook = HyprlandAPI::createFunctionHook(
             PHANDLE,
-            HyprlandAPI::findFunctionsByName(PHANDLE, "CHyprRenderer::renderLockscreen")[0].address,
+            HyprlandAPI::findFunctionsByName(PHANDLE, "renderLockscreen")[0].address,
             (void*)&hkRenderLockscreen);
 
         g_pRenderLockscreenHook->hook();
