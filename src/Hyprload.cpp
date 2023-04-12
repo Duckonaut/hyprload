@@ -74,8 +74,8 @@ namespace hyprload {
         }
 
         if (hyprlandCommitWhenBuilt != getCurrentHyprlandCommitHash()) {
-            error("hyprlandCommitWhenBuilt: " + hyprlandCommitWhenBuilt);
-            error("hyprlandCommitNow: " + getCurrentHyprlandCommitHash());
+            debug("hyprlandCommitWhenBuilt: " + hyprlandCommitWhenBuilt);
+            debug("hyprlandCommitNow: " + getCurrentHyprlandCommitHash());
             return false;
         }
         return true;

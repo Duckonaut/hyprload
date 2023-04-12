@@ -93,13 +93,21 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         hyprload::error("Failed to create config values!");
     }
 
-    if (hyprload::g_pHyprload->checkIfHyprloadFullyCompatible()) {
-        g_pRenderLockscreenHook = HyprlandAPI::createFunctionHook(
-            PHANDLE,
-            HyprlandAPI::findFunctionsByName(PHANDLE, "renderLockscreen")[0].address,
-            (void*)&hkRenderLockscreen);
+    HyprlandAPI::reloadConfig();
 
-        g_pRenderLockscreenHook->hook();
+    if (hyprload::g_pHyprload->checkIfHyprloadFullyCompatible()) {
+        const auto methods = HyprlandAPI::findFunctionsByName(PHANDLE, "renderLockscreen");
+
+        for (auto& method : methods) {
+            hyprload::debug("Found renderLockscreen method:" + method.demangled);
+        }
+        if (methods.size() != 1) {
+            hyprload::error("Failed to find renderLockscreen method!");
+        } else {
+            g_pRenderLockscreenHook =
+                HyprlandAPI::createFunctionHook(PHANDLE, (void*)methods[0].address, (void*)hkRenderLockscreen);
+            g_pRenderLockscreenHook->hook();
+        }
     } else {
         hyprload::error("Hyprland commit hash mismatch", 10000);
         hyprload::error("Hyprload was built with a different version of Hyprland", 10000);
@@ -108,8 +116,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     HyprlandAPI::registerCallbackDynamic(
         PHANDLE, "tick", [](void*, std::any) { hyprload::g_pHyprload->handleTick(); });
-
-    HyprlandAPI::reloadConfig();
 
     hyprload::config::g_pHyprloadConfig = std::make_unique<hyprload::config::HyprloadConfig>();
 
