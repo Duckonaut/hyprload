@@ -26,6 +26,8 @@ namespace hyprload {
       public:
         Hyprload();
 
+        bool checkIfHyprloadFullyCompatible();
+
         void handleTick();
 
         void installPlugins();
@@ -45,15 +47,19 @@ namespace hyprload {
 
         const std::vector<std::string>& getLoadedPlugins() const;
         bool isPluginLoaded(const std::string& name) const;
+        const std::string& getCurrentHyprlandCommitHash();
 
       private:
         std::optional<std::filesystem::path> getSessionBinariesPath();
         std::string generateSessionGuid();
         void setupHeaders();
+        std::string fetchHyprlandCommitHash();
 
         std::vector<std::string> m_vPlugins;
         std::optional<std::string> m_sSessionGuid;
         std::optional<flock_t> m_iSessionLock;
+
+        std::string m_sHyprlandCommitNow;
 
         bool m_bIsBuilding = false;
         std::vector<std::shared_ptr<BuildProcessDescriptor>> m_vBuildProcesses;

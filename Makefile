@@ -12,18 +12,19 @@ INSTALL_PATH=${HOME}/.local/share/hyprload/
 COMPILE_FLAGS=-g -fPIC --no-gnu-unique -I "/usr/include/pixman-1" -I "/usr/include/libdrm" -I "${HYPRLAND_HEADERS}" -Iinclude -std=c++23
 LINK_FLAGS=-shared
 
-.PHONY: clean clangd
+.PHONY: install clean clangd
 
 all: check_env $(PLUGIN_NAME).so
 
 install: all
-	mkdir -p $(INSTALL_PATH)plugins/bin
+	@mkdir -p $(INSTALL_PATH)plugins/bin
 	cp $(PLUGIN_NAME).sh "$(INSTALL_PATH)$(PLUGIN_NAME).sh"
 	@if [ -f "$(INSTALL_PATH)$(PLUGIN_NAME).so" ]; then\
 		cp $(PLUGIN_NAME).so "$(INSTALL_PATH)$(PLUGIN_NAME).so.update";\
 	else\
 		cp $(PLUGIN_NAME).so "$(INSTALL_PATH)$(PLUGIN_NAME).so";\
 	fi
+	@echo $$(git -C $(HYPRLAND_HEADERS) rev-parse HEAD) > "$(INSTALL_PATH)$(PLUGIN_NAME).hlcommit"
 
 check_env:
 ifndef HYPRLAND_HEADERS
@@ -31,7 +32,7 @@ ifndef HYPRLAND_HEADERS
 endif
 
 $(OBJECT_DIR)/%.o: src/%.cpp
-	mkdir -p $(OBJECT_DIR)
+	@mkdir -p $(OBJECT_DIR)
 	g++ -c -o $@ $< $(COMPILE_FLAGS)
 
 $(PLUGIN_NAME).so: $(addprefix $(OBJECT_DIR)/, $(notdir $(SOURCE_FILES:.cpp=.o)))

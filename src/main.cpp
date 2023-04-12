@@ -1,6 +1,7 @@
 #include "globals.hpp"
 #include "util.hpp"
 
+#include <src/plugins/PluginAPI.hpp>
 #include <src/Compositor.hpp>
 #include <src/render/Renderer.hpp>
 #include <src/config/ConfigManager.hpp>
@@ -23,9 +24,6 @@
 inline CFunctionHook* g_pRenderAllClientsForMonitorHook = nullptr;
 typedef void (*origRenderAllClientsForMonitor)(void*, const int&, timespec*);
 
-inline CFunctionHook* g_pTickHook = nullptr;
-typedef void (*origWlTick)(void*);
-
 // Do NOT change this function.
 APICALL EXPORT std::string PLUGIN_API_VERSION() {
     return HYPRLAND_API_VERSION;
@@ -36,12 +34,6 @@ void hkRenderAllClientsForMonitor(void* thisptr, const int& monitor, timespec* t
         thisptr, monitor, time);
 
     hyprload::overlay::g_pOverlay->drawOverlay(monitor, time);
-}
-
-void hkWlTick(void* thisptr) {
-    hyprload::g_pHyprload->handleTick();
-
-    (*(origWlTick)g_pTickHook->m_pOriginal)(thisptr);
 }
 
 void hyprloadDispatcher(std::string command) {
@@ -102,16 +94,23 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         hyprload::error("Failed to create config values!");
     }
 
-    g_pRenderAllClientsForMonitorHook =
-        HyprlandAPI::createFunctionHook(PHANDLE, (void*)&CHyprRenderer::renderAllClientsForMonitor,
-                                        (void*)&hkRenderAllClientsForMonitor);
+    if (hyprload::g_pHyprload->checkIfHyprloadFullyCompatible())
+    {
+        g_pRenderAllClientsForMonitorHook =
+            HyprlandAPI::createFunctionHook(PHANDLE, (void*)&CHyprRenderer::renderAllClientsForMonitor,
+                                            (void*)&hkRenderAllClientsForMonitor);
 
-    g_pRenderAllClientsForMonitorHook->hook();
+        g_pRenderAllClientsForMonitorHook->hook();
+    }
+    else {
+        hyprload::error("Hyprland commit hash mismatch", 10000);
+        hyprload::error("Hyprload was built with a different version of Hyprland", 10000);
+        hyprload::error("Please update hyprload with the hyprload update dispatcher", 10000);
+    }
 
-    g_pTickHook =
-        HyprlandAPI::createFunctionHook(PHANDLE, (void*)&CAnimationManager::tick, (void*)&hkWlTick);
-
-    g_pTickHook->hook();
+    HyprlandAPI::registerCallbackDynamic(PHANDLE, "tick", [](void*, std::any) {
+        hyprload::g_pHyprload->handleTick();
+    });
 
     HyprlandAPI::reloadConfig();
 

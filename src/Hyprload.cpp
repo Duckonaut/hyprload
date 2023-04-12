@@ -61,6 +61,26 @@ namespace hyprload {
         }
     }
 
+    bool Hyprload::checkIfHyprloadFullyCompatible() {
+        std::string hyprlandCommitWhenBuilt;
+
+        std::ifstream commitFile(hyprload::getRootPath() / "hyprload.hlcommit");
+        if (commitFile.is_open()) {
+            std::getline(commitFile, hyprlandCommitWhenBuilt);
+            commitFile.close();
+        } else {
+            error("Could not open hyprload.hlcommit");
+            return false;
+        }
+
+        if (hyprlandCommitWhenBuilt != getCurrentHyprlandCommitHash()) {
+            error("hyprlandCommitWhenBuilt: " + hyprlandCommitWhenBuilt);
+            error("hyprlandCommitNow: " + getCurrentHyprlandCommitHash());
+            return false;
+        }
+        return true;
+    }
+
     void Hyprload::installPlugins() {
         if (m_bIsBuilding) {
             error("Already updating plugins");
@@ -171,7 +191,9 @@ namespace hyprload {
         auto myDescriptor = descriptor;
         m_vBuildProcesses.push_back(myDescriptor);
 
-        std::thread thread = std::thread([descriptor]() {
+        bool forceUpdate = !checkIfHyprloadFullyCompatible();
+
+        std::thread thread = std::thread([descriptor, forceUpdate]() {
             std::unique_lock<std::mutex> headerLock = std::unique_lock(g_mSetupHeadersMutex);
             g_cvSetupHeaders.wait(headerLock, []() { return g_bHeadersReady.has_value(); });
 
@@ -187,7 +209,7 @@ namespace hyprload {
 
             auto source = descriptor->m_pSource;
 
-            if (!source->isSourceAvailable()) {
+            if (!source->isSourceAvailable() || forceUpdate) {
                 auto result = source->installSource();
 
                 if (result.isErr()) {
@@ -296,17 +318,28 @@ namespace hyprload {
         }
     }
 
-    void Hyprload::setupHeaders() {
+    std::string Hyprload::fetchHyprlandCommitHash() {
         std::string hyprlandVersion = HyprlandAPI::invokeHyprctlCommand("version", {}, "j");
         debug("Hyprland version: " + hyprlandVersion);
 
         usize hyprlandVersionStart = hyprlandVersion.find("\"commit\": \"");
         if (hyprlandVersionStart == std::string::npos) {
             error("Failed to find commit hash in Hyprland version");
-            return;
+            return "";
         }
-        std::string commitHash = hyprlandVersion.substr(hyprlandVersionStart + 11, 40);
+        return hyprlandVersion.substr(hyprlandVersionStart + 11, 40);
+    }
 
+    const std::string& Hyprload::getCurrentHyprlandCommitHash() {
+        if (m_sHyprlandCommitNow.empty()) {
+            m_sHyprlandCommitNow = fetchHyprlandCommitHash();
+        }
+
+        return m_sHyprlandCommitNow;
+    }
+
+    void Hyprload::setupHeaders() {
+        std::string commitHash = fetchHyprlandCommitHash();
         debug("Hyprland commit hash: " + commitHash);
 
         std::thread thread = std::thread([commitHash]() {
