@@ -209,7 +209,7 @@ namespace hyprload {
 
             auto source = descriptor->m_pSource;
 
-            if (!source->isSourceAvailable() || forceUpdate) {
+            if (!source->isSourceAvailable()) {
                 auto result = source->installSource();
 
                 if (result.isErr()) {
@@ -222,7 +222,7 @@ namespace hyprload {
                 }
             }
 
-            if (source->isUpToDate()) {
+            if (source->isUpToDate() && !forceUpdate) {
                 auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
 
                 descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err(
@@ -261,7 +261,7 @@ namespace hyprload {
             auto myDescriptor = descriptor;
             m_vBuildProcesses.push_back(myDescriptor);
 
-            std::thread thread = std::thread([descriptor]() {
+            std::thread thread = std::thread([descriptor, forceUpdate]() {
                 std::unique_lock<std::mutex> headerLock = std::unique_lock(g_mSetupHeadersMutex);
                 g_cvSetupHeaders.wait(headerLock, []() { return g_bHeadersReady.has_value(); });
 
@@ -290,7 +290,7 @@ namespace hyprload {
                     }
                 }
 
-                if (source->isUpToDate()) {
+                if (source->isUpToDate() &&!forceUpdate) {
                     auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
 
                     descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err(
