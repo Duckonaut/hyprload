@@ -53,10 +53,8 @@ namespace hyprload::overlay {
         m_bDrawOverlay = !m_bDrawOverlay;
     }
 
-    void HyprloadOverlay::drawOverlay(const int& monitor, timespec* time) {
-        CMonitor* pMonitor = g_pCompositor->getMonitorFromID(monitor);
-
-        if (m_pLastMonitor != pMonitor || !m_pCairo || !m_pCairoSurface) {
+    void HyprloadOverlay::drawOverlay(CMonitor* monitor, timespec* time) {
+        if (m_pLastMonitor != monitor || !m_pCairo || !m_pCairoSurface) {
             if (m_pCairo && m_pCairoSurface) {
                 cairo_destroy(m_pCairo);
                 cairo_surface_destroy(m_pCairoSurface);
@@ -64,9 +62,9 @@ namespace hyprload::overlay {
             g_pHyprRenderer->damageBox(&m_bLastDamage);
 
             m_pCairoSurface = cairo_image_surface_create(
-                CAIRO_FORMAT_ARGB32, pMonitor->vecPixelSize.x, pMonitor->vecPixelSize.y);
+                CAIRO_FORMAT_ARGB32, monitor->vecPixelSize.x, monitor->vecPixelSize.y);
             m_pCairo = cairo_create(m_pCairoSurface);
-            m_pLastMonitor = pMonitor;
+            m_pLastMonitor = monitor;
         }
 
         f32 currentTime = time->tv_sec + time->tv_nsec / 1000000000.0f;
@@ -88,7 +86,7 @@ namespace hyprload::overlay {
             if (!m_bDamagedAfterLastDraw) {
                 g_pHyprRenderer->damageBox(&m_bLastDamage);
 
-                g_pCompositor->scheduleFrameForMonitor(pMonitor);
+                g_pCompositor->scheduleFrameForMonitor(monitor);
 
                 m_bDamagedAfterLastDraw = true;
             }
@@ -105,12 +103,12 @@ namespace hyprload::overlay {
 
         cairo_surface_flush(m_pCairoSurface);
 
-        wlr_box damage = doDrawOverlay(pMonitor);
+        wlr_box damage = doDrawOverlay(monitor);
 
         g_pHyprRenderer->damageBox(&m_bLastDamage);
         g_pHyprRenderer->damageBox(&damage);
 
-        g_pCompositor->scheduleFrameForMonitor(pMonitor);
+        g_pCompositor->scheduleFrameForMonitor(monitor);
 
         m_bLastDamage = damage;
 
@@ -126,11 +124,11 @@ namespace hyprload::overlay {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
 #endif
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, pMonitor->vecPixelSize.x, pMonitor->vecPixelSize.y,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, monitor->vecPixelSize.x, monitor->vecPixelSize.y,
                      0, GL_RGBA, GL_UNSIGNED_BYTE, DATA);
 
-        wlr_box pMonBox = {0, 0, static_cast<int>(pMonitor->vecPixelSize.x),
-                           static_cast<int>(pMonitor->vecPixelSize.y)};
+        wlr_box pMonBox = {0, 0, static_cast<int>(monitor->vecPixelSize.x),
+                           static_cast<int>(monitor->vecPixelSize.y)};
         g_pHyprOpenGL->renderTexture(m_tTexture, &pMonBox, 1.f);
 
         m_bDamagedAfterLastDraw = false;

@@ -1,6 +1,7 @@
 #include "globals.hpp"
 #include "util.hpp"
 
+#include <src/helpers/Monitor.hpp>
 #include <src/plugins/PluginAPI.hpp>
 #include <src/Compositor.hpp>
 #include <src/render/Renderer.hpp>
@@ -21,17 +22,16 @@
 #include "HyprloadOverlay.hpp"
 #include "HyprloadConfig.hpp"
 
-inline CFunctionHook* g_pRenderAllClientsForMonitorHook = nullptr;
-typedef void (*origRenderAllClientsForMonitor)(void*, const int&, timespec*);
+inline CFunctionHook* g_pRenderLockscreenHook = nullptr;
+typedef void (*origRenderLockscreen)(void*, CMonitor*, timespec*);
 
 // Do NOT change this function.
 APICALL EXPORT std::string PLUGIN_API_VERSION() {
     return HYPRLAND_API_VERSION;
 }
 
-void hkRenderAllClientsForMonitor(void* thisptr, const int& monitor, timespec* time) {
-    (*(origRenderAllClientsForMonitor)g_pRenderAllClientsForMonitorHook->m_pOriginal)(
-        thisptr, monitor, time);
+void hkRenderLockscreen(void* thisptr, CMonitor* monitor, timespec* time) {
+    (*(origRenderLockscreen)g_pRenderLockscreenHook->m_pOriginal)(thisptr, monitor, time);
 
     hyprload::overlay::g_pOverlay->drawOverlay(monitor, time);
 }
@@ -64,7 +64,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     std::string defaultConfigPath = home + std::string("/.config/hypr/hyprload.toml");
 
     bool configWasCreated = true;
-
     configWasCreated = configWasCreated &&
         HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginRoot,
                                     SConfigValue{.strValue = defaultPluginDir});
@@ -94,23 +93,21 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         hyprload::error("Failed to create config values!");
     }
 
-    if (hyprload::g_pHyprload->checkIfHyprloadFullyCompatible())
-    {
-        g_pRenderAllClientsForMonitorHook =
-            HyprlandAPI::createFunctionHook(PHANDLE, HyprlandAPI::findFunctionsByName(PHANDLE, "CHyprRenderer::renderLockscreen")[0].address,
-                                            (void*)&hkRenderAllClientsForMonitor);
+    if (hyprload::g_pHyprload->checkIfHyprloadFullyCompatible()) {
+        g_pRenderLockscreenHook = HyprlandAPI::createFunctionHook(
+            PHANDLE,
+            HyprlandAPI::findFunctionsByName(PHANDLE, "CHyprRenderer::renderLockscreen")[0].address,
+            (void*)&hkRenderLockscreen);
 
-        g_pRenderAllClientsForMonitorHook->hook();
-    }
-    else {
+        g_pRenderLockscreenHook->hook();
+    } else {
         hyprload::error("Hyprland commit hash mismatch", 10000);
         hyprload::error("Hyprload was built with a different version of Hyprland", 10000);
         hyprload::error("Please update hyprload with the hyprload update dispatcher", 10000);
     }
 
-    HyprlandAPI::registerCallbackDynamic(PHANDLE, "tick", [](void*, std::any) {
-        hyprload::g_pHyprload->handleTick();
-    });
+    HyprlandAPI::registerCallbackDynamic(
+        PHANDLE, "tick", [](void*, std::any) { hyprload::g_pHyprload->handleTick(); });
 
     HyprlandAPI::reloadConfig();
 

@@ -25,7 +25,7 @@ namespace hyprload::overlay {
       public:
         HyprloadOverlay();
 
-        void drawOverlay(const int& monitor, timespec* time);
+        void drawOverlay(CMonitor* monitor, timespec* time);
 
         void setDrawOverlay(bool bDrawOverlay);
         bool getDrawOverlay();
