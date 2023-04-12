@@ -4,7 +4,6 @@
 
 #include "Hyprload.hpp"
 #include "HyprloadConfig.hpp"
-#include "HyprloadOverlay.hpp"
 
 #include <src/helpers/Monitor.hpp>
 #include <src/plugins/PluginSystem.hpp>

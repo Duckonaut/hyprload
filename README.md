@@ -36,14 +36,12 @@ plugins = [
         - `load`: Loads all the plugins
         - `clear`: Unloads all the plugins
         - `reload`: Unloads then reloads all the plugins
-        - `overlay`: Toggles an overlay showing your actively loaded plugins
         - `install`: Installs the required plugins from `hyprload.toml`
         - `update`: Updates `hyprload` and the required plugins from `hyprload.toml`
     - Example:
 ```
 bind=SUPERSHIFT,R,hyprload,reload
 bind=SUPERSHIFT,U,hyprload,update
-bind=SUPERSHIFT,O,hyprload,overlay
 ```
 
 ## Configuration

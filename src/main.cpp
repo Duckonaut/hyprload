@@ -19,21 +19,11 @@
 #include <vector>
 
 #include "Hyprload.hpp"
-#include "HyprloadOverlay.hpp"
 #include "HyprloadConfig.hpp"
-
-inline CFunctionHook* g_pRenderLockscreenHook = nullptr;
-typedef void (*origRenderLockscreen)(void*, CMonitor*, timespec*);
 
 // Do NOT change this function.
 APICALL EXPORT std::string PLUGIN_API_VERSION() {
     return HYPRLAND_API_VERSION;
-}
-
-void hkRenderLockscreen(void* thisptr, CMonitor* monitor, timespec* time) {
-    (*(origRenderLockscreen)g_pRenderLockscreenHook->m_pOriginal)(thisptr, monitor, time);
-
-    hyprload::overlay::g_pOverlay->drawOverlay(monitor, time);
 }
 
 void hyprloadDispatcher(std::string command) {
@@ -47,8 +37,6 @@ void hyprloadDispatcher(std::string command) {
         hyprload::g_pHyprload->installPlugins();
     } else if (command == "update") {
         hyprload::g_pHyprload->updatePlugins();
-    } else if (command == "overlay") {
-        hyprload::overlay::g_pOverlay->toggleDrawOverlay();
     } else {
         hyprload::error("Unknown command: " + command);
     }
@@ -57,7 +45,6 @@ void hyprloadDispatcher(std::string command) {
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     PHANDLE = handle;
     hyprload::g_pHyprload = std::make_unique<hyprload::Hyprload>();
-    hyprload::overlay::g_pOverlay = std::make_unique<hyprload::overlay::HyprloadOverlay>();
 
     std::string home = getenv("HOME");
     std::string defaultPluginDir = home + std::string("/.local/share/hyprload/");
@@ -76,13 +63,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         HyprlandAPI::addConfigValue(PHANDLE, hyprload::c_pluginDebug, SConfigValue{.intValue = 0});
 
     configWasCreated = configWasCreated &&
-        HyprlandAPI::addConfigValue(PHANDLE, hyprload::overlay::c_overlayAnimationCurve,
-                                    SConfigValue{.strValue = STRVAL_EMPTY});
-    configWasCreated = configWasCreated &&
-        HyprlandAPI::addConfigValue(PHANDLE, hyprload::overlay::c_overlayAnimationDuration,
-                                    SConfigValue{.floatValue = 0.5});
-
-    configWasCreated = configWasCreated &&
         HyprlandAPI::addConfigValue(PHANDLE, hyprload::config::c_pluginConfig,
                                     SConfigValue{.strValue = defaultConfigPath});
 
@@ -95,20 +75,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     HyprlandAPI::reloadConfig();
 
-    if (hyprload::g_pHyprload->checkIfHyprloadFullyCompatible()) {
-        const auto methods = HyprlandAPI::findFunctionsByName(PHANDLE, "renderLockscreen");
-
-        for (auto& method : methods) {
-            hyprload::debug("Found renderLockscreen method:" + method.demangled);
-        }
-        if (methods.size() != 1) {
-            hyprload::error("Failed to find renderLockscreen method!");
-        } else {
-            g_pRenderLockscreenHook =
-                HyprlandAPI::createFunctionHook(PHANDLE, (void*)methods[0].address, (void*)hkRenderLockscreen);
-            g_pRenderLockscreenHook->hook();
-        }
-    } else {
+    if (!hyprload::g_pHyprload->checkIfHyprloadFullyCompatible()) {
         hyprload::error("Hyprland commit hash mismatch", 10000);
         hyprload::error("Hyprload was built with a different version of Hyprland", 10000);
         hyprload::error("Please update hyprload with the hyprload update dispatcher", 10000);

@@ -3,7 +3,6 @@
 #include "types.hpp"
 
 #include "HyprloadPlugin.hpp"
-#include "HyprloadOverlay.hpp"
 #include "BuildProcessDescriptor.hpp"
 
 #include <memory>
