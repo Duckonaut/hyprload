@@ -294,6 +294,8 @@ namespace hyprload::plugin {
                 return hyprload::Result<std::monostate, std::string>::err(
                     "Failed to checkout revision");
             }
+
+            return this->install(name, hyprlandHeaders);
         }
 
         std::string command = "git -C " + m_pSourcePath.string() + " pull";
