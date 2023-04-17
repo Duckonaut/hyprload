@@ -219,7 +219,7 @@ namespace hyprload::plugin {
         m_pSourcePath = hyprload::getPluginsPath() / "src" / name;
 
         if (m_sRev.has_value()) {
-            m_pSourcePath /= "@" + m_sRev.value();
+            m_pSourcePath += "@" + m_sRev.value();
         }
     }
 
