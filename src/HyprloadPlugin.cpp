@@ -338,7 +338,7 @@ namespace hyprload::plugin {
         }
 
         std::filesystem::path targetPath =
-            hyprload::getPluginBinariesPath() / outputBinary.filename();
+            hyprload::getPluginBinariesPath() / (name + ".so");
 
         if (std::filesystem::exists(targetPath)) {
             std::filesystem::remove(targetPath);
@@ -423,7 +423,7 @@ namespace hyprload::plugin {
         }
 
         std::filesystem::path targetPath =
-            hyprload::getPluginBinariesPath() / outputBinary.filename();
+            hyprload::getPluginBinariesPath() / (name + ".so");
 
         if (std::filesystem::exists(targetPath)) {
             std::filesystem::remove(targetPath);
