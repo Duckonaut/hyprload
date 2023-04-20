@@ -200,7 +200,7 @@ namespace hyprload::plugin {
         return this->isEquivalent(other);
     }
 
-    GitPluginSource::GitPluginSource(std::string&& url, std::string&& branch,
+    GitPluginSource::GitPluginSource(std::string&& url, std::optional<std::string>&& branch,
                                      std::optional<std::string>&& rev) {
         m_sBranch = branch;
         m_sRev = rev;
@@ -218,6 +218,10 @@ namespace hyprload::plugin {
 
         m_pSourcePath = hyprload::getPluginsPath() / "src" / name;
 
+        if (m_sBranch.has_value()) {
+            m_pSourcePath += "@" + m_sBranch.value();
+        }
+
         if (m_sRev.has_value()) {
             m_pSourcePath += "@" + m_sRev.value();
         }
@@ -225,7 +229,11 @@ namespace hyprload::plugin {
 
     hyprload::Result<std::monostate, std::string> GitPluginSource::installSource() {
         std::string command =
-            "git clone " + m_sUrl + " " + m_pSourcePath.string() + " --branch " + m_sBranch;
+            "git clone " + m_sUrl + " " + m_pSourcePath.string();
+
+        if (m_sBranch.has_value()) {
+            command += " --branch " + m_sBranch.value();
+        }
 
         if (std::system(command.c_str()) != 0) {
             return hyprload::Result<std::monostate, std::string>::err(
@@ -296,6 +304,16 @@ namespace hyprload::plugin {
             }
 
             return this->install(name, hyprlandHeaders);
+        }
+
+        if (m_sBranch.has_value()) {
+            std::string command =
+                "git -C " + m_pSourcePath.string() + " checkout " + m_sBranch.value();
+
+            if (std::system(command.c_str()) != 0) {
+                return hyprload::Result<std::monostate, std::string>::err(
+                    "Failed to checkout branch");
+            }
         }
 
         std::string command = "git -C " + m_pSourcePath.string() + " pull";
@@ -535,7 +553,7 @@ namespace hyprload::plugin {
         if (plugin.contains("git") && plugin["git"].is_string()) {
             source = plugin["git"].as_string()->get();
 
-            std::string branch = "main";
+            std::optional<std::string> branch = std::nullopt;
 
             if (plugin.contains("branch") && plugin["branch"].is_string()) {
                 branch = plugin["branch"].as_string()->get();
@@ -596,10 +614,8 @@ namespace hyprload::plugin {
     }
 
     PluginRequirement::PluginRequirement(const std::string& plugin) {
-        std::string branch = "main";
-
         auto gitSource =
-            std::make_shared<GitPluginSource>(std::string(plugin), std::move(branch), std::nullopt);
+            std::make_shared<GitPluginSource>(std::string(plugin), std::nullopt, std::nullopt);
 
         // Deduplicate sources
         bool found = false;

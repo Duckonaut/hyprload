@@ -66,7 +66,8 @@ namespace hyprload::plugin {
 
     class GitPluginSource : public PluginSource {
       public:
-        GitPluginSource(std::string&& url, std::string&& branch, std::optional<std::string>&& rev);
+        GitPluginSource(std::string&& url, std::optional<std::string>&& branch,
+                        std::optional<std::string>&& rev);
 
         hyprload::Result<std::monostate, std::string> installSource() override;
         bool isSourceAvailable() override;
@@ -85,7 +86,7 @@ namespace hyprload::plugin {
 
       private:
         std::string m_sUrl;
-        std::string m_sBranch;
+        std::optional<std::string> m_sBranch;
         std::optional<std::string> m_sRev;
         std::filesystem::path m_pSourcePath;
     };
