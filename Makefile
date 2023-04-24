@@ -9,7 +9,14 @@ OBJECT_DIR=obj
 
 INSTALL_PATH=${HOME}/.local/share/hyprload/
 
-COMPILE_FLAGS=-g -fPIC --no-gnu-unique -I "/usr/include/pixman-1" -I "/usr/include/libdrm" -I "${HYPRLAND_HEADERS}" -Iinclude -std=c++23
+COMPILE_FLAGS=-g -fPIC --no-gnu-unique -std=c++23
+COMPILE_FLAGS+=-I "/usr/include/pixman-1"
+COMPILE_FLAGS+=-I "/usr/include/libdrm"
+COMPILE_FLAGS+=-I "${HYPRLAND_HEADERS}"
+COMPILE_FLAGS+=-I "${HYPRLAND_HEADERS}/subprojects/wlroots/include"
+COMPILE_FLAGS+=-I "${HYPRLAND_HEADERS}/subprojects/wlroots/build/include"
+COMPILE_FLAGS+=-Iinclude
+
 LINK_FLAGS=-shared
 
 .PHONY: install clean clangd
