@@ -289,7 +289,7 @@ namespace hyprload {
                     }
                 }
 
-                if (source->isUpToDate() &&!forceUpdate) {
+                if (source->isUpToDate() && !forceUpdate) {
                     auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
 
                     descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err(
@@ -376,11 +376,37 @@ namespace hyprload {
                 }
             }
 
-            // Checkout to commit hash
-            std::string command = "git -C " + hyprlandHeadersPath.string() + " fetch && git -C " +
-                hyprlandHeadersPath.string() + " checkout " + commitHash + " --recurse-submodules";
+            // Fix submodules
+            // When building Hyprland, the wlroots submodule has changes in meson.build
+            // The reset fixes it.
+            std::string command = "git -C " +
+                (hyprlandHeadersPath / "subprojects" / "wlroots").string() + " reset --hard";
 
             std::tuple<int, std::string> result = hyprload::executeCommand(command);
+
+            if (std::get<0>(result) != 0) {
+                g_bHeadersReady = hyprload::Result<std::monostate, std::string>::err(
+                    "Failed to reset submodules: " + std::get<1>(result));
+                headerLock.unlock();
+                g_cvSetupHeaders.notify_all();
+                return;
+            }
+
+            command = "git -C " + hyprlandHeadersPath.string() + " submodule update --init";
+
+            result = hyprload::executeCommand(command);
+
+            if (std::get<0>(result) != 0) {
+                g_bHeadersReady = hyprload::Result<std::monostate, std::string>::err(
+                    "Failed to update submodules: " + std::get<1>(result));
+                headerLock.unlock();
+                g_cvSetupHeaders.notify_all();
+                return;
+            }
+
+            // Checkout to commit hash
+            command = "git -C " + hyprlandHeadersPath.string() + " fetch && git -C " +
+                hyprlandHeadersPath.string() + " checkout " + commitHash + " --recurse-submodules";
 
             if (std::get<0>(result) != 0) {
                 g_bHeadersReady = hyprload::Result<std::monostate, std::string>::err(
