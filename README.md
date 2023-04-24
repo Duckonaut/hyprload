@@ -18,6 +18,10 @@
 2. Add this to your config to initialize `hyprload`
     - `exec-once=$HOME/.local/share/hyprload/hyprload.sh`
 
+> **Warning**: Right now, the main supported distribution is Arch. I have not tested on other distros personally.
+> And sadly, as of right now, the `hyprland` package in the official Arch `community` repo does not work with hyprload (does not provide the version info required)
+> AUR packages (especially `-git`) will work.
+
 # Setup
 1. To have hyprload manage your plugin installation, create a `hyprload.toml` file (by default, next to your `hyprland.conf` config: `~/.config/hypr/hyprload.toml`
 2. Fill it out with the plugins you want. It consists of one array, named plugins, in which you can provide the installation source in various ways. Example:
