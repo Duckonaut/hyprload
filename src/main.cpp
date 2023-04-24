@@ -103,7 +103,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     hyprload::success("Plugins loaded!");
 
-    return {"hyprload", "Hyprland plugin manager", "Duckonaut", "1.2.0"};
+    return {"hyprload", "Hyprland plugin manager", "Duckonaut", "1.2.1"};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
