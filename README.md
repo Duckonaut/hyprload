@@ -19,7 +19,7 @@
     - `exec-once=$HOME/.local/share/hyprload/hyprload.sh`
 
 > **Warning**: Right now, the main supported distribution is Arch. I have not tested on other distros personally.
-> And sadly, as of right now, the `hyprland` package in the official Arch `community` repo does not work with hyprload (does not provide the version info required)
+> And sadly, as of right now, the `hyprland` package in the official Arch `community` repository does not work with hyprload (does not provide the version info required).
 > AUR packages (especially `-git`) will work.
 
 # Setup
