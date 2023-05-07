@@ -168,6 +168,8 @@ namespace hyprload {
             return;
         }
 
+        info("Updating plugins...");
+
         m_bIsBuilding = true;
 
         std::optional<std::filesystem::path> configHyprlandHeadersPath =
