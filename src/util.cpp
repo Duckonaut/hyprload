@@ -1,6 +1,3 @@
-#include "src/SharedDefs.hpp"
-#include "src/debug/Log.hpp"
-#include "src/plugins/PluginAPI.hpp"
 #include "types.hpp"
 #include "globals.hpp"
 #include "util.hpp"
@@ -12,7 +9,10 @@
 #include <sys/stat.h>
 #include <sys/file.h>
 
-#include <src/config/ConfigManager.hpp>
+#include <hyprland/src/SharedDefs.hpp>
+#include <hyprland/src/debug/Log.hpp>
+#include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprland/src/config/ConfigManager.hpp>
 
 namespace hyprload {
     std::filesystem::path getRootPath() {

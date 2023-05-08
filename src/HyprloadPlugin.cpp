@@ -14,7 +14,7 @@
 #include <variant>
 #include <vector>
 
-#include <src/helpers/MiscFunctions.hpp>
+#include <hyprland/src/helpers/MiscFunctions.hpp>
 #include "toml/toml.hpp"
 
 namespace hyprload::plugin {

@@ -5,10 +5,10 @@
 #include "Hyprload.hpp"
 #include "HyprloadConfig.hpp"
 
-#include <src/helpers/Monitor.hpp>
-#include <src/plugins/PluginSystem.hpp>
-#include <src/config/ConfigManager.hpp>
-#include <src/plugins/PluginAPI.hpp>
+#include <hyprland/src/helpers/Monitor.hpp>
+#include <hyprland/src/plugins/PluginSystem.hpp>
+#include <hyprland/src/config/ConfigManager.hpp>
+#include <hyprland/src/plugins/PluginAPI.hpp>
 
 #include <thread>
 #include <random>

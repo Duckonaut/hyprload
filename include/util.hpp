@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <optional>
 
-#include <src/helpers/Color.hpp>
+#include <hyprland/src/helpers/Color.hpp>
 
 namespace hyprload {
     const CColor s_pluginColor = {0x98 / 255.0f, 0xc3 / 255.0f, 0x79 / 255.0f, 1.0f};

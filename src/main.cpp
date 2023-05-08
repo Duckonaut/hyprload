@@ -1,15 +1,15 @@
 #include "globals.hpp"
 #include "util.hpp"
 
-#include <src/helpers/Monitor.hpp>
-#include <src/plugins/PluginAPI.hpp>
-#include <src/Compositor.hpp>
-#include <src/render/Renderer.hpp>
-#include <src/config/ConfigManager.hpp>
-#include <src/helpers/Color.hpp>
-#include <src/helpers/Workspace.hpp>
-#include <src/managers/KeybindManager.hpp>
-#include <src/managers/AnimationManager.hpp>
+#include <hyprland/src/helpers/Monitor.hpp>
+#include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/render/Renderer.hpp>
+#include <hyprland/src/config/ConfigManager.hpp>
+#include <hyprland/src/helpers/Color.hpp>
+#include <hyprland/src/helpers/Workspace.hpp>
+#include <hyprland/src/managers/KeybindManager.hpp>
+#include <hyprland/src/managers/AnimationManager.hpp>
 
 #include <algorithm>
 #include <filesystem>

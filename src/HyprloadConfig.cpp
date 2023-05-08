@@ -6,7 +6,7 @@
 
 #include "toml/toml.hpp"
 
-#include <src/config/ConfigManager.hpp>
+#include <hyprland/src/config/ConfigManager.hpp>
 
 namespace hyprload::config {
     std::filesystem::path getConfigPath() {

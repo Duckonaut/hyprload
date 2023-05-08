@@ -14,9 +14,9 @@
 #include <filesystem>
 #include <condition_variable>
 
-#include <src/helpers/Color.hpp>
-#include <src/helpers/Monitor.hpp>
-#include <src/render/Texture.hpp>
+#include <hyprland/src/helpers/Color.hpp>
+#include <hyprland/src/helpers/Monitor.hpp>
+#include <hyprland/src/render/Texture.hpp>
 
 namespace hyprload {
     void tryCleanupPreviousSessions();
