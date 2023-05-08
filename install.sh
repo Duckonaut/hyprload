@@ -42,7 +42,7 @@ progress "[4/7] Set up hyprland source in $HYPRLAND_PATH at commit $HYPRLAND_COM
 
 progress "[5/7] Setting up hyprland plugin environment"
 
-make -C "$HYPRLAND_PATH" pluginenv
+pkexec make -C "$HYPRLAND_PATH" pluginenv
 
 export HYPRLAND_HEADERS="$HYPRLAND_PATH"
 

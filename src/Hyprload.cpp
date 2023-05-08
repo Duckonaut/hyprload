@@ -417,7 +417,7 @@ namespace hyprload {
             }
 
             // Make pluginenv
-            command = "make -C " + hyprlandHeadersPath.string() + " pluginenv";
+            command = "pkexec make -C " + hyprlandHeadersPath.string() + " pluginenv";
 
             result = hyprload::executeCommand(command);
 
