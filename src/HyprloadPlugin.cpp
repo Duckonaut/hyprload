@@ -528,6 +528,7 @@ namespace hyprload::plugin {
     hyprload::Result<std::monostate, std::string>
     SelfSource::build(const std::string&, const std::filesystem::path& hyprlandHeaders) {
         std::string buildSteps = "export HYPRLAND_HEADERS=" + hyprlandHeaders.string() +
+            " && export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/share/pkgconfig" +
             " && make -C " + (getRootPath() / "src").string() + " install";
 
         auto [exit, output] = executeCommand(buildSteps);
