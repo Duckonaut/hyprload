@@ -80,6 +80,7 @@ namespace hyprload::plugin {
         const auto& pluginManifest = pluginManifestResult.unwrap();
 
         std::string buildSteps = "export HYPRLAND_HEADERS=" + hyprlandHeadersPath.string() +
+            " && export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/share/pkgconfig" +
             " && cd " + sourcePath.string() + " && ";
 
         for (const std::string& step : pluginManifest.getBuildSteps()) {
@@ -228,8 +229,7 @@ namespace hyprload::plugin {
     }
 
     hyprload::Result<std::monostate, std::string> GitPluginSource::installSource() {
-        std::string command =
-            "git clone " + m_sUrl + " " + m_pSourcePath.string();
+        std::string command = "git clone " + m_sUrl + " " + m_pSourcePath.string();
 
         if (m_sBranch.has_value()) {
             command += " --branch " + m_sBranch.value();
@@ -355,8 +355,7 @@ namespace hyprload::plugin {
                 "Plugin binary does not exist");
         }
 
-        std::filesystem::path targetPath =
-            hyprload::getPluginBinariesPath() / (name + ".so");
+        std::filesystem::path targetPath = hyprload::getPluginBinariesPath() / (name + ".so");
 
         if (std::filesystem::exists(targetPath)) {
             std::filesystem::remove(targetPath);
@@ -440,8 +439,7 @@ namespace hyprload::plugin {
                 "Plugin binary does not exist");
         }
 
-        std::filesystem::path targetPath =
-            hyprload::getPluginBinariesPath() / (name + ".so");
+        std::filesystem::path targetPath = hyprload::getPluginBinariesPath() / (name + ".so");
 
         if (std::filesystem::exists(targetPath)) {
             std::filesystem::remove(targetPath);

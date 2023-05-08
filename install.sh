@@ -46,6 +46,8 @@ make -C "$HYPRLAND_PATH" pluginenv
 
 export HYPRLAND_HEADERS="$HYPRLAND_PATH"
 
+export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/share/pkgconfig"
+
 progress "[6/7] Installing hyprload"
 
 make -C "$HYPRLOAD_SOURCE_PATH" install

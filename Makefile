@@ -10,13 +10,19 @@ OBJECT_DIR=obj
 INSTALL_PATH=${HOME}/.local/share/hyprload/
 
 COMPILE_FLAGS=-g -fPIC --no-gnu-unique -std=c++23
-COMPILE_FLAGS+=-I "/usr/include/pixman-1"
-COMPILE_FLAGS+=-I "/usr/include/libdrm"
-COMPILE_FLAGS+=-I "${HYPRLAND_HEADERS}"
-COMPILE_FLAGS+=-I "${HYPRLAND_HEADERS}/protocols"
-COMPILE_FLAGS+=-I "${HYPRLAND_HEADERS}/subprojects/wlroots/include"
-COMPILE_FLAGS+=-I "${HYPRLAND_HEADERS}/subprojects/wlroots/build/include"
+COMPILE_FLAGS+=`pkg-config --cflags pixman-1 libdrm hyprland`
 COMPILE_FLAGS+=-Iinclude
+
+COMPILE_DEFINES=-DWLR_USE_UNSTABLE
+
+ifeq ($(shell whereis -b jq), "jq:")
+$(error "jq not found. Please install jq.")
+else
+BUILT_WITH_NOXWAYLAND=$(shell hyprctl version -j | jq -r '.flags | .[]' | grep 'no xwayland')
+ifneq ($(BUILT_WITH_NOXWAYLAND),)
+COMPILE_DEFINES+=-DNO_XWAYLAND
+endif
+endif
 
 LINK_FLAGS=-shared
 
@@ -35,20 +41,36 @@ install: all
 	@echo $$(git -C $(HYPRLAND_HEADERS) rev-parse HEAD) > "$(INSTALL_PATH)$(PLUGIN_NAME).hlcommit"
 
 check_env:
-ifndef HYPRLAND_HEADERS
-	$(error HYPRLAND_HEADERS is undefined! Please set it to the path to the root of the configured Hyprland repo)
-endif
+	@if [ -z "$(HYPRLAND_HEADERS)" ]; then \
+		echo 'HYPRLAND_HEADERS not set. Set it to the root Hyprland directory.'; \
+		exit 1; \
+	fi
+	@if pkg-config --exists hyprland; then \
+		echo 'Hyprland headers found.'; \
+	else \
+		echo 'Hyprland headers not available. Run `make pluginenv` in the root Hyprland directory.'; \
+		exit 1; \
+	fi
+	@if [ -z $(BUILT_WITH_NOXWAYLAND) ]; then \
+		echo 'Building with XWayland support.'; \
+	else \
+		echo 'Building without XWayland support.'; \
+	fi
 
 $(OBJECT_DIR)/%.o: src/%.cpp
 	@mkdir -p $(OBJECT_DIR)
-	g++ -c -o $@ $< $(COMPILE_FLAGS)
+	g++ -c -o $@ $< $(COMPILE_FLAGS) $(COMPILE_DEFINES)
 
 $(PLUGIN_NAME).so: $(addprefix $(OBJECT_DIR)/, $(notdir $(SOURCE_FILES:.cpp=.o)))
-	g++ $(LINK_FLAGS) -o $@ $^ $(COMPILE_FLAGS)
+	g++ $(LINK_FLAGS) -o $@ $^ $(COMPILE_FLAGS) $(COMPILE_DEFINES)
 
 clean:
 	rm -rf $(OBJECT_DIR)
 	rm -f $(PLUGIN_NAME).so
 
 clangd:
-	printf "%b" "-I/usr/include/pixman-1\n-I/usr/include/libdrm\n-I${HYPRLAND_HEADERS}\n-Iinclude\n-std=c++2b\n-Wall\n-Wextra" > compile_flags.txt
+	echo "$(COMPILE_FLAGS) $(COMPILE_DEFINES)" | \
+	sed 's/--no-gnu-unique//g' | \
+	sed 's/ -/\n-/g' | \
+	sed 's/std=c++23/std=c++2b/g' \
+	> compile_flags.txt
