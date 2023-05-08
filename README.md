@@ -12,6 +12,10 @@
     - [X] Self-hosting
 - [ ] Plugin browser
 
+# Requirements
+- Hyprland >= 0.25.0
+- `jq`
+
 # Installing
 1. Install `hyprload`
     - `curl -sSL https://raw.githubusercontent.com/Duckonaut/hyprload/main/install.sh | bash`
