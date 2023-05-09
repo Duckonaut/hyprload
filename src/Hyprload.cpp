@@ -410,6 +410,8 @@ namespace hyprload {
             command = "git -C " + hyprlandHeadersPath.string() + " fetch && git -C " +
                 hyprlandHeadersPath.string() + " checkout " + commitHash + " --recurse-submodules";
 
+            result = hyprload::executeCommand(command);
+
             if (std::get<0>(result) != 0) {
                 g_bHeadersReady = hyprload::Result<std::monostate, std::string>::err(
                     "Failed to checkout to commit hash: " + std::get<1>(result));
