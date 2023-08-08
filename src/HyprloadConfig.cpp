@@ -6,6 +6,7 @@
 
 #include "toml/toml.hpp"
 
+#include <cstddef>
 #include <hyprland/src/config/ConfigManager.hpp>
 
 namespace hyprload::config {
@@ -21,6 +22,7 @@ namespace hyprload::config {
         } catch (const std::exception& e) {
             const std::string error = e.what();
             hyprload::error("Failed to parse config file: " + error);
+            return;
         }
 
         if (m_pConfig->contains("plugins") && m_pConfig->get("plugins")->is_array()) {
@@ -40,6 +42,7 @@ namespace hyprload::config {
                     }
                 });
         }
+
     }
 
     void HyprloadConfig::reloadConfig() {
@@ -51,6 +54,7 @@ namespace hyprload::config {
         } catch (const std::exception& e) {
             const std::string error = e.what();
             hyprload::error("Failed to parse config file: " + error);
+            return;
         }
 
         if (m_pConfig->contains("plugins") && m_pConfig->get("plugins")->is_array()) {
