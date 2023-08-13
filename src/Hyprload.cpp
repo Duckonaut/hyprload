@@ -72,6 +72,10 @@ namespace hyprload {
             return false;
         }
 
+        if (hyprlandCommitWhenBuilt == "") {
+            return true; // Source from package manager return no commit id
+        }
+
         if (hyprlandCommitWhenBuilt != getCurrentHyprlandCommitHash()) {
             debug("hyprlandCommitWhenBuilt: " + hyprlandCommitWhenBuilt);
             debug("hyprlandCommitNow: " + getCurrentHyprlandCommitHash());
