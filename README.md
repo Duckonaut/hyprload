@@ -17,6 +17,7 @@
 - `jq` (required for checking Hyprland version)
 - `polkit` (required to set up Hyprland plugin env)
     - You will need an authentication agent set up. `lxsession` works for me.
+- `cpio` (required during installation for file management)
 
 # Installing
 1. Install `hyprload`
