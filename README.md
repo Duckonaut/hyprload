@@ -87,7 +87,7 @@ The full specification of a `PLUGIN_NAME` dict:
 
 ## Examples
 ### Single plugin
-[split-monitor-workspaces](https;//github.com/duckonaut/split-monitor-workspaces)
+[split-monitor-workspaces](https://github.com/duckonaut/split-monitor-workspaces)
 ```toml
 [split-monitor-workspaces]
 description = "Split monitor workspaces"
