@@ -74,7 +74,7 @@ namespace hyprload {
                                                {"icon", eIcons::ICON_INFO},
                                            });
         }
-        Debug::log(LOG, (' ' + logMessage).c_str());
+        Debug::log(LOG, "%s", (' ' + logMessage).c_str());
     }
 
     void success(const std::string& message, usize duration) {
@@ -88,7 +88,7 @@ namespace hyprload {
                                                {"icon", eIcons::ICON_OK},
                                            });
         }
-        Debug::log(LOG, (' ' + logMessage).c_str());
+        Debug::log(LOG, "%s", (' ' + logMessage).c_str());
     }
 
     void error(const std::string& message, usize duration) {
@@ -102,7 +102,7 @@ namespace hyprload {
                                                {"icon", eIcons::ICON_ERROR},
                                            });
         }
-        Debug::log(LOG, (' ' + logMessage).c_str());
+        Debug::log(LOG, "%s", (' ' + logMessage).c_str());
     }
 
     void debug(const std::string& message, usize duration) {
@@ -116,7 +116,7 @@ namespace hyprload {
                                                {"icon", eIcons::ICON_INFO},
                                            });
         }
-        Debug::log(LOG, (' ' + debugMessage).c_str());
+        Debug::log(LOG, "%s", (' ' + debugMessage).c_str());
     }
 
     std::optional<int> tryCreateLock(const std::filesystem::path& lockFile) {
