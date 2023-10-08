@@ -71,7 +71,7 @@ The configuration of hyprload behavior is done in `hyprland.conf`, like a normal
 | `plugin:hyprload:quiet`                   | bool      | false                         | Whether to hide the notifications                             |
 | `plugin:hyprload:debug`                   | bool      | false                         | Whether to hide extra-special debug notifications             |
 | `plugin:hyprload:config`                  | string    | `~/.config/hypr/hyprload.toml`| The path to your plugin requirements file                     |
-| `plugin:hyprload:hyprload_headers`        | string    | `empty`                       | The path to the Hyprland source to force using as headers.    |
+| `plugin:hyprload:hyprland_headers`        | string    | `empty`                       | The path to the Hyprland source to force using as headers.    |
 
 # Plugin Development
 If you maintain a plugin for Hyprland, to support automatic management via `hyprload.toml`, you need to create a `hyprload.toml` manifest in the root of your
