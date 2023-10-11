@@ -50,6 +50,6 @@ export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/share/pkgconfig"
 
 progress "[6/7] Installing hyprload"
 
-make -C "$HYPRLOAD_SOURCE_PATH" install
+make -C "$HYPRLOAD_SOURCE_PATH" install -j $(nproc)
 
 progress "[7/7] Installed hyprload!"

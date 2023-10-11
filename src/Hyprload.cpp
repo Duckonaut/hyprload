@@ -490,13 +490,13 @@ namespace hyprload {
 
     void Hyprload::writePkgConfig(std::ofstream& pkgConfigFile,
                                   const std::string& hyprlandHeadersPath) {
-        pkgConfigFile << "prefix=\"" << getRootPath() << "\"\n";
+        pkgConfigFile << "prefix=" << getRootPath() << "\n";
         pkgConfigFile << "includedir=${prefix}/include\n";
         pkgConfigFile << "\n";
         pkgConfigFile << "Name: Hyprland\n";
         pkgConfigFile << "Description: hyprload-overriden Hyprland header files\n";
         pkgConfigFile << "Version: custom\n";
-        pkgConfigFile << "Cflags: -I\"${includedir}\" -I\"${includeDir}\"/hyprland/protocols\" "
+        pkgConfigFile << "Cflags: -I\"${includedir}\" -I\"${includeDir}/hyprland/protocols\" "
                          "-I\"${includeDir}/hyprland/wlroots\"\n";
     }
 
