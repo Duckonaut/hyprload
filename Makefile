@@ -38,7 +38,7 @@ install: all
 	else\
 		cp $(PLUGIN_NAME).so "$(INSTALL_PATH)$(PLUGIN_NAME).so";\
 	fi
-	@echo $HYPRLAND_COMMIT > "$(INSTALL_PATH)$(PLUGIN_NAME).hlcommit"
+	@echo $(HYPRLAND_COMMIT) > "$(INSTALL_PATH)$(PLUGIN_NAME).hlcommit"
 
 check_env:
 	@if [ -z "$(HYPRLAND_COMMIT)" ]; then \
