@@ -2,6 +2,17 @@
 
 ### A [Hyprland](https://github.com/hyprwm/Hyprland) plugin manager
 
+> **Plugin Developer Warning**
+> `hyprload` has recently been refactored to no longer provide HYPRLAND_HEADERS. As far as I know, this wasn't used anywhere, but if you
+> encounter issues (missing headers, etc.) that's a sign for you to move to `pkg-config`. `hyprload` now always provides a known good
+> version of headers via `pkg-config` by overriding it.
+
+
+> **User Warning**
+> As part of the above changes, you might want to reinstall `hyprload`, as the place where Hyprland headers were stored has changed. You
+> could now be keeping a useless, pretty big duplicate repository in `~/.local/share/hyprload/hyprland` (moved to
+> `~/.local/share/hyprload/include/hyprland`). To reinstall, simply `rm -rf ~/.local/share/hyprload` and proceed to [Installing](#Installing)
+
 # Features
 - [x] Loading plugins
 - [x] Reloading plugins
