@@ -44,7 +44,7 @@ progress "[5/7] Setting up hyprland plugin environment"
 
 pkexec make -C "$HYPRLAND_PATH" pluginenv
 
-export HYPRLAND_HEADERS="$HYPRLAND_PATH"
+export HYPRLAND_COMMIT="$HYPRLAND_COMMIT"
 
 export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/share/pkgconfig"
 

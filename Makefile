@@ -38,11 +38,11 @@ install: all
 	else\
 		cp $(PLUGIN_NAME).so "$(INSTALL_PATH)$(PLUGIN_NAME).so";\
 	fi
-	@git -C $(HYPRLAND_HEADERS) rev-parse HEAD > "$(INSTALL_PATH)$(PLUGIN_NAME).hlcommit"
+	@echo $HYPRLAND_COMMIT > "$(INSTALL_PATH)$(PLUGIN_NAME).hlcommit"
 
 check_env:
-	@if [ -z "$(HYPRLAND_HEADERS)" ]; then \
-		echo 'HYPRLAND_HEADERS not set. Set it to the root Hyprland directory.'; \
+	@if [ -z "$(HYPRLAND_COMMIT)" ]; then \
+		echo 'HYPRLAND_COMMIT not set. Set it to the root Hyprland directory.'; \
 		exit 1; \
 	fi
 	@if pkg-config --exists hyprland; then \
