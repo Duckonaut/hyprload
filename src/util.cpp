@@ -34,7 +34,7 @@ namespace hyprload {
         return std::filesystem::path(hyprloadHeaders->strValue);
     }
 
-    std::optional<std::filesystem::path> getHyprlandInstallationpath() {
+    std::optional<std::filesystem::path> getHyprlandInstallationPath() {
         std::optional<std::filesystem::path> path = getConfigHyprlandHeadersPath();
         if (path.has_value()) {
             return std::nullopt;
