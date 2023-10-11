@@ -497,7 +497,8 @@ namespace hyprload {
         pkgConfigFile << "Description: hyprload-overriden Hyprland header files\n";
         pkgConfigFile << "Version: custom\n";
         pkgConfigFile << "Cflags: -I\"${includedir}\" -I\"${includedir}/hyprland/protocols\" "
-                         "-I\"${includedir}/hyprland/wlroots\"\n";
+                         "-I\"${includedir}/hyprland/subprojects/wlroots/include\" "
+                         "-I\"${includedir}/hyprland/subprojects/wlroots/build/include\"\n";
     }
 
     void Hyprload::loadPlugins() {
