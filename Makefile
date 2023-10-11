@@ -38,7 +38,7 @@ install: all
 	else\
 		cp $(PLUGIN_NAME).so "$(INSTALL_PATH)$(PLUGIN_NAME).so";\
 	fi
-	@echo $$(git -C $(HYPRLAND_HEADERS) rev-parse HEAD) > "$(INSTALL_PATH)$(PLUGIN_NAME).hlcommit"
+	@git -C $(HYPRLAND_HEADERS) rev-parse HEAD > "$(INSTALL_PATH)$(PLUGIN_NAME).hlcommit"
 
 check_env:
 	@if [ -z "$(HYPRLAND_HEADERS)" ]; then \
