@@ -68,8 +68,7 @@ namespace hyprload::plugin {
     }
 
     hyprload::Result<std::monostate, std::string>
-    buildPlugin(const std::filesystem::path& sourcePath, const std::string& name,
-                const std::filesystem::path& hyprlandHeadersPath) {
+    buildPlugin(const std::filesystem::path& sourcePath, const std::string& name) {
         auto pluginManifestResult = getPluginManifest(sourcePath, name);
 
         if (pluginManifestResult.isErr()) {
@@ -79,8 +78,7 @@ namespace hyprload::plugin {
 
         const auto& pluginManifest = pluginManifestResult.unwrap();
 
-        std::string buildSteps = "export HYPRLAND_HEADERS=" + hyprlandHeadersPath.string() +
-            " && export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/share/pkgconfig" +
+        std::string buildSteps = "export PKG_CONFIG_PATH=" + getPkgConfigOverridePath().string() +
             " && cd " + sourcePath.string() + " && ";
 
         for (const std::string& step : pluginManifest.getBuildSteps()) {
@@ -292,8 +290,7 @@ namespace hyprload::plugin {
         return true;
     }
 
-    hyprload::Result<std::monostate, std::string>
-    GitPluginSource::update(const std::string& name, const std::filesystem::path& hyprlandHeaders) {
+    hyprload::Result<std::monostate, std::string> GitPluginSource::update(const std::string& name) {
         if (m_sRev.has_value()) {
             std::string command =
                 "git -C " + m_pSourcePath.string() + " checkout " + m_sRev.value();
@@ -303,7 +300,7 @@ namespace hyprload::plugin {
                     "Failed to checkout revision");
             }
 
-            return this->install(name, hyprlandHeaders);
+            return this->install(name);
         }
 
         if (m_sBranch.has_value()) {
@@ -323,17 +320,16 @@ namespace hyprload::plugin {
                 "Failed to update plugin source");
         }
 
-        return this->install(name, hyprlandHeaders);
+        return this->install(name);
     }
 
     hyprload::Result<std::monostate, std::string>
-    GitPluginSource::install(const std::string& name,
-                             const std::filesystem::path& hyprlandHeaders) {
+    GitPluginSource::install(const std::string& name) {
         if (!this->isSourceAvailable()) {
             return this->installSource();
         }
 
-        auto result = build(name, hyprlandHeaders);
+        auto result = build(name);
 
         if (result.isErr()) {
             return result;
@@ -366,9 +362,8 @@ namespace hyprload::plugin {
         return hyprload::Result<std::monostate, std::string>::ok(std::monostate());
     }
 
-    hyprload::Result<std::monostate, std::string>
-    GitPluginSource::build(const std::string& name, const std::filesystem::path& hyprlandHeaders) {
-        return buildPlugin(m_pSourcePath, name, hyprlandHeaders);
+    hyprload::Result<std::monostate, std::string> GitPluginSource::build(const std::string& name) {
+        return buildPlugin(m_pSourcePath, name);
     }
 
     bool GitPluginSource::isEquivalent(const PluginSource& other) const {
@@ -404,20 +399,18 @@ namespace hyprload::plugin {
     }
 
     hyprload::Result<std::monostate, std::string>
-    LocalPluginSource::update(const std::string& name,
-                              const std::filesystem::path& hyprlandHeaders) {
-        return this->install(name, hyprlandHeaders);
+    LocalPluginSource::update(const std::string& name) {
+        return this->install(name);
     }
 
     hyprload::Result<std::monostate, std::string>
-    LocalPluginSource::install(const std::string& name,
-                               const std::filesystem::path& hyprlandHeaders) {
+    LocalPluginSource::install(const std::string& name) {
         if (!this->isSourceAvailable()) {
             return hyprload::Result<std::monostate, std::string>::err("Source for " + name +
                                                                       " does not exist");
         }
 
-        auto result = build(name, hyprlandHeaders);
+        auto result = build(name);
 
         if (result.isErr()) {
             return result;
@@ -451,9 +444,8 @@ namespace hyprload::plugin {
     }
 
     hyprload::Result<std::monostate, std::string>
-    LocalPluginSource::build(const std::string& name,
-                             const std::filesystem::path& hyprlandHeaders) {
-        return buildPlugin(m_pSourcePath, name, hyprlandHeaders);
+    LocalPluginSource::build(const std::string& name) {
+        return buildPlugin(m_pSourcePath, name);
     }
 
     bool LocalPluginSource::isEquivalent(const PluginSource& other) const {
@@ -498,8 +490,7 @@ namespace hyprload::plugin {
         return false; // Don't provide any plugins.
     }
 
-    hyprload::Result<std::monostate, std::string>
-    SelfSource::update(const std::string& name, const std::filesystem::path& hyprlandHeaders) {
+    hyprload::Result<std::monostate, std::string> SelfSource::update(const std::string& name) {
         std::string command = "git -C " + (getRootPath() / "src").string() + " pull";
 
         if (std::system(command.c_str()) != 0) {
@@ -507,16 +498,15 @@ namespace hyprload::plugin {
                 "Failed to update own source");
         }
 
-        return this->install(name, hyprlandHeaders);
+        return this->install(name);
     }
 
-    hyprload::Result<std::monostate, std::string>
-    SelfSource::install(const std::string& name, const std::filesystem::path& hyprlandHeaders) {
+    hyprload::Result<std::monostate, std::string> SelfSource::install(const std::string& name) {
         if (!this->isSourceAvailable()) {
             return this->installSource();
         }
 
-        auto result = build(name, hyprlandHeaders);
+        auto result = build(name);
 
         if (result.isErr()) {
             return result;
@@ -525,10 +515,8 @@ namespace hyprload::plugin {
         return hyprload::Result<std::monostate, std::string>::ok(std::monostate());
     }
 
-    hyprload::Result<std::monostate, std::string>
-    SelfSource::build(const std::string&, const std::filesystem::path& hyprlandHeaders) {
-        std::string buildSteps = "export HYPRLAND_HEADERS=" + hyprlandHeaders.string() +
-            " && export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/share/pkgconfig" +
+    hyprload::Result<std::monostate, std::string> SelfSource::build(const std::string&) {
+        std::string buildSteps = "export PKG_CONFIG_PATH=" + getPkgConfigOverridePath().string() +
             " && make -C " + (getRootPath() / "src").string() + " install";
 
         auto [exit, output] = executeCommand(buildSteps);

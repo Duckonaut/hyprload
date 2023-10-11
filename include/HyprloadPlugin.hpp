@@ -52,11 +52,11 @@ namespace hyprload::plugin {
         virtual bool providesPlugin(const std::string& name) const = 0;
 
         [[nodiscard]] virtual hyprload::Result<std::monostate, std::string>
-        update(const std::string& name, const std::filesystem::path& hyprlandHeaders) = 0;
+        update(const std::string& name) = 0;
         [[nodiscard]] virtual hyprload::Result<std::monostate, std::string>
-        build(const std::string& name, const std::filesystem::path& hyprlandHeaders) = 0;
+        build(const std::string& name) = 0;
         [[nodiscard]] virtual hyprload::Result<std::monostate, std::string>
-        install(const std::string& name, const std::filesystem::path& hyprlandHeaders) = 0;
+        install(const std::string& name) = 0;
 
         bool operator==(const PluginSource& other) const;
 
@@ -75,11 +75,11 @@ namespace hyprload::plugin {
         bool providesPlugin(const std::string& name) const override;
 
         hyprload::Result<std::monostate, std::string>
-        update(const std::string& name, const std::filesystem::path& hyprlandHeaders) override;
+        update(const std::string& name) override;
         hyprload::Result<std::monostate, std::string>
-        build(const std::string& name, const std::filesystem::path& hyprlandHeaders) override;
+        build(const std::string& name) override;
         hyprload::Result<std::monostate, std::string>
-        install(const std::string& name, const std::filesystem::path& hyprlandHeaders) override;
+        install(const std::string& name) override;
 
       protected:
         bool isEquivalent(const PluginSource& other) const override;
@@ -101,11 +101,11 @@ namespace hyprload::plugin {
         bool providesPlugin(const std::string& name) const override;
 
         hyprload::Result<std::monostate, std::string>
-        update(const std::string& name, const std::filesystem::path& hyprlandHeaders) override;
+        update(const std::string& name) override;
         hyprload::Result<std::monostate, std::string>
-        build(const std::string& name, const std::filesystem::path& hyprlandHeaders) override;
+        build(const std::string& name) override;
         hyprload::Result<std::monostate, std::string>
-        install(const std::string& name, const std::filesystem::path& hyprlandHeaders) override;
+        install(const std::string& name) override;
 
       protected:
         bool isEquivalent(const PluginSource& other) const override;
@@ -124,11 +124,11 @@ namespace hyprload::plugin {
         bool providesPlugin(const std::string& name) const override;
 
         hyprload::Result<std::monostate, std::string>
-        update(const std::string& name, const std::filesystem::path& hyprlandHeaders) override;
+        update(const std::string& name) override;
         hyprload::Result<std::monostate, std::string>
-        build(const std::string& name, const std::filesystem::path& hyprlandHeaders) override;
+        build(const std::string& name) override;
         hyprload::Result<std::monostate, std::string>
-        install(const std::string& name, const std::filesystem::path& hyprlandHeaders) override;
+        install(const std::string& name) override;
 
       protected:
         bool isEquivalent(const PluginSource& other) const override;

@@ -34,13 +34,30 @@ namespace hyprload {
         return std::filesystem::path(hyprloadHeaders->strValue);
     }
 
+    std::optional<std::filesystem::path> getHyprlandInstallationpath() {
+        std::optional<std::filesystem::path> path = getConfigHyprlandHeadersPath();
+        if (path.has_value()) {
+            return std::nullopt;
+        }
+
+        return getRootPath() / "include" / "hyprland";
+    }
+
     std::filesystem::path getHyprlandHeadersPath() {
         std::optional<std::filesystem::path> path = getConfigHyprlandHeadersPath();
         if (path.has_value()) {
             return path.value();
         }
 
-        return getRootPath() / "hyprland";
+        return getRootPath() / "include";
+    }
+
+    std::filesystem::path getPkgConfigOverridePath() {
+        return getRootPath() / "pkgconfig";
+    }
+
+    std::filesystem::path getHyprlandPkgConfigPath() {
+        return getPkgConfigOverridePath() / "hyprland.pc";
     }
 
     std::filesystem::path getPluginsPath() {

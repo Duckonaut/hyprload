@@ -97,7 +97,7 @@ namespace hyprload {
             g_bHeadersReady = hyprload::Result<std::monostate, std::string>::ok(std::monostate());
         }
 
-        std::filesystem::path hyprlandHeadersPath = getHyprlandHeadersPath();
+        setupPkgConfig();
 
         config::g_pHyprloadConfig->reloadConfig();
 
@@ -106,8 +106,8 @@ namespace hyprload {
 
         for (const plugin::PluginRequirement& plugin : requirements) {
             std::shared_ptr<hyprload::BuildProcessDescriptor> descriptor =
-                std::make_shared<hyprload::BuildProcessDescriptor>(
-                    std::string(plugin.getName()), plugin.getSource(), hyprlandHeadersPath);
+                std::make_shared<hyprload::BuildProcessDescriptor>(std::string(plugin.getName()),
+                                                                   plugin.getSource());
 
             auto myDescriptor = descriptor;
             m_vBuildProcesses.push_back(myDescriptor);
@@ -141,8 +141,7 @@ namespace hyprload {
                     }
                 }
 
-                auto result =
-                    source->build(descriptor->m_sName, descriptor->m_sHyprlandHeadersPath);
+                auto result = source->build(descriptor->m_sName);
 
                 if (result.isErr()) {
                     auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
@@ -181,13 +180,13 @@ namespace hyprload {
             g_bHeadersReady = hyprload::Result<std::monostate, std::string>::ok(std::monostate());
         }
 
-        std::filesystem::path hyprlandHeadersPath = getHyprlandHeadersPath();
+        setupPkgConfig();
 
         // update self
 
         std::shared_ptr<hyprload::BuildProcessDescriptor> descriptor =
             std::make_shared<hyprload::BuildProcessDescriptor>(
-                "hyprload", std::make_shared<plugin::SelfSource>(), hyprlandHeadersPath);
+                "hyprload", std::make_shared<plugin::SelfSource>());
 
         auto myDescriptor = descriptor;
         m_vBuildProcesses.push_back(myDescriptor);
@@ -231,7 +230,7 @@ namespace hyprload {
                 return;
             }
 
-            auto result = source->update(descriptor->m_sName, descriptor->m_sHyprlandHeadersPath);
+            auto result = source->update(descriptor->m_sName);
 
             if (result.isErr()) {
                 auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
@@ -256,8 +255,8 @@ namespace hyprload {
 
         for (const plugin::PluginRequirement& plugin : requirements) {
             std::shared_ptr<hyprload::BuildProcessDescriptor> descriptor =
-                std::make_shared<hyprload::BuildProcessDescriptor>(
-                    std::string(plugin.getName()), plugin.getSource(), hyprlandHeadersPath);
+                std::make_shared<hyprload::BuildProcessDescriptor>(std::string(plugin.getName()),
+                                                                   plugin.getSource());
 
             auto myDescriptor = descriptor;
             m_vBuildProcesses.push_back(myDescriptor);
@@ -299,8 +298,7 @@ namespace hyprload {
                     return;
                 }
 
-                auto result =
-                    source->update(descriptor->m_sName, descriptor->m_sHyprlandHeadersPath);
+                auto result = source->update(descriptor->m_sName);
 
                 if (result.isErr()) {
                     auto lock = std::scoped_lock<std::mutex>(descriptor->m_mMutex);
@@ -357,7 +355,14 @@ namespace hyprload {
                 return;
             }
 
-            std::filesystem::path hyprlandHeadersPath = hyprload::getHyprlandHeadersPath();
+            std::optional<std::filesystem::path> hyprlandInstallationPath =
+                hyprload::getHyprlandInstallationPath();
+
+            if (!hyprlandInstallationPath.has_value()) {
+                return;
+            }
+
+            std::filesystem::path hyprlandHeadersPath = hyprlandInstallationPath.value();
 
             if (!std::filesystem::exists(hyprlandHeadersPath)) {
                 // Clone hyprland
@@ -394,6 +399,20 @@ namespace hyprload {
                 return;
             }
 
+            // Reset the repo to remove any changes
+            command = "git -C " + hyprlandHeadersPath.string() + " reset --hard";
+
+            result = hyprload::executeCommand(command);
+
+            if (std::get<0>(result) != 0) {
+                g_bHeadersReady = hyprload::Result<std::monostate, std::string>::err(
+                    "Failed to reset Hyprland: " + std::get<1>(result));
+                headerLock.unlock();
+                g_cvSetupHeaders.notify_all();
+                return;
+            }
+
+            // Update submodules
             command = "git -C " + hyprlandHeadersPath.string() + " submodule update --init";
 
             result = hyprload::executeCommand(command);
@@ -441,6 +460,44 @@ namespace hyprload {
         });
 
         thread.detach();
+    }
+
+    void Hyprload::setupPkgConfig() {
+        std::optional<std::filesystem::path> configHyprlandHeadersPath =
+            hyprload::getConfigHyprlandHeadersPath();
+
+        std::filesystem::path hyprlandHeadersPath = getHyprlandHeadersPath();
+
+        if (configHyprlandHeadersPath.has_value()) {
+            hyprlandHeadersPath = configHyprlandHeadersPath.value();
+        }
+
+        std::filesystem::path pkgConfigOverridePath = getPkgConfigOverridePath();
+
+        if (!std::filesystem::exists(pkgConfigOverridePath)) {
+            std::filesystem::create_directories(pkgConfigOverridePath);
+        }
+
+        std::filesystem::path hyprlandPkgConfigPath = getHyprlandPkgConfigPath();
+
+        // write pkgconfig file
+        std::ofstream pkgConfigFile(hyprlandPkgConfigPath);
+
+        writePkgConfig(pkgConfigFile, hyprlandHeadersPath);
+
+        pkgConfigFile.close();
+    }
+
+    void Hyprload::writePkgConfig(std::ofstream& pkgConfigFile,
+                                  const std::string& hyprlandHeadersPath) {
+        pkgConfigFile << "prefix=\"" << getRootPath() << "\"\n";
+        pkgConfigFile << "includedir=${prefix}/include\n";
+        pkgConfigFile << "\n";
+        pkgConfigFile << "Name: Hyprland\n";
+        pkgConfigFile << "Description: hyprload-overriden Hyprland header files\n";
+        pkgConfigFile << "Version: custom\n";
+        pkgConfigFile << "Cflags: -I\"${includedir}\" -I\"${includeDir}\"/hyprland/protocols\" "
+                         "-I\"${includeDir}/hyprland/wlroots\"\n";
     }
 
     void Hyprload::loadPlugins() {

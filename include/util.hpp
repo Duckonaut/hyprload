@@ -17,7 +17,10 @@ namespace hyprload {
 
     std::filesystem::path getRootPath();
     std::optional<std::filesystem::path> getConfigHyprlandHeadersPath();
+    std::optional<std::filesystem::path> getHyprlandInstallationPath();
     std::filesystem::path getHyprlandHeadersPath();
+    std::filesystem::path getPkgConfigOverridePath();
+    std::filesystem::path getHyprlandPkgConfigPath();
     std::filesystem::path getPluginsPath();
     std::filesystem::path getPluginBinariesPath();
 

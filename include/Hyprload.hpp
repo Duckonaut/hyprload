@@ -1,5 +1,5 @@
 #pragma once
-#define WLR_USE_UNSTABLE
+#include <fstream>
 #include "types.hpp"
 
 #include "HyprloadPlugin.hpp"
@@ -52,6 +52,8 @@ namespace hyprload {
         std::optional<std::filesystem::path> getSessionBinariesPath();
         std::string generateSessionGuid();
         void setupHeaders();
+        void setupPkgConfig();
+        void writePkgConfig(std::ofstream& file, const std::string& hyprlandHeadersPath);
         std::string fetchHyprlandCommitHash();
 
         std::vector<std::string> m_vPlugins;
