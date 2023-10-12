@@ -518,7 +518,7 @@ namespace hyprload::plugin {
     hyprload::Result<std::monostate, std::string> SelfSource::build(const std::string&) {
         std::string buildSteps =
             "export HYPRLAND_COMMIT=" + g_pHyprload->getCurrentHyprlandCommitHash() +
-            "export PKG_CONFIG_PATH=" + getPkgConfigOverridePath().string() + " && make -C " +
+            " && export PKG_CONFIG_PATH=" + getPkgConfigOverridePath().string() + " && make -C " +
             (getRootPath() / "src").string() + " install";
 
         auto [exit, output] = executeCommand(buildSteps);
