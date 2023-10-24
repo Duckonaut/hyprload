@@ -1,6 +1,7 @@
 #include "globals.hpp"
 #include "util.hpp"
 
+#include <hyprland/src/SharedDefs.hpp>
 #include <hyprland/src/helpers/Monitor.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/Compositor.hpp>
@@ -81,8 +82,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         hyprload::error("Please update hyprload with the hyprload update dispatcher", 10000);
     }
 
-    HyprlandAPI::registerCallbackDynamic(
-        PHANDLE, "tick", [](void*, std::any) { hyprload::g_pHyprload->handleTick(); });
+    HyprlandAPI::registerCallbackDynamic(PHANDLE, "tick", [](void*, SCallbackInfo&, std::any) {
+        hyprload::g_pHyprload->handleTick();
+    });
 
     hyprload::config::g_pHyprloadConfig = std::make_unique<hyprload::config::HyprloadConfig>();
 
