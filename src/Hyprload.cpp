@@ -439,14 +439,14 @@ namespace hyprload {
                 return;
             }
 
-            // Make pluginenv
+            // Make headers
             command = "make -C " + hyprlandHeadersPath.string() + " all";
 
             result = hyprload::executeCommand(command);
 
             if (std::get<0>(result) != 0) {
                 g_bHeadersReady = hyprload::Result<std::monostate, std::string>::err(
-                    "Failed to make pluginenv: " + std::get<1>(result));
+                    "Failed to make headers: " + std::get<1>(result));
                 headerLock.unlock();
                 g_cvSetupHeaders.notify_all();
                 return;
