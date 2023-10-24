@@ -26,7 +26,7 @@
 - [ ] Plugin browser
 
 # Requirements
-- Hyprland >= 0.25.0
+- Hyprland >= 0.31.0
 - `jq` (required for checking Hyprland version)
 - `polkit` (required to set up Hyprland plugin env)
     - You will need an authentication agent set up. `lxsession` works for me.
