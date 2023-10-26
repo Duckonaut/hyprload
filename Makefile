@@ -46,7 +46,7 @@ check_env:
 		exit 1; \
 	fi
 	@if pkg-config --exists hyprland; then \
-		echo 'Hyprland headers found.'; \
+		echo 'Hyprland headers found in: '`pkg-config --variable=includedir hyprland`; \
 	else \
 		echo 'Hyprland headers not available. Run `make all` in the root Hyprland directory.'; \
 		exit 1; \
