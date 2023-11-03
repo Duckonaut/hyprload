@@ -592,7 +592,7 @@ namespace hyprload {
                 continue;
             }
 
-            pluginFiles.push_back(plugin);
+            pluginFiles.push_back(pluginPath);
         }
 
         for (auto& plugin : pluginFiles) {
