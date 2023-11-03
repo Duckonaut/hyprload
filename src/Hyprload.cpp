@@ -122,7 +122,7 @@ namespace hyprload {
                     auto lock = std::unique_lock<std::mutex>(descriptor->m_mMutex);
 
                     descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err(
-                        "Failed to setup Hyprland headers");
+                        "Failed to setup Hyprland headers: " + g_bHeadersReady.value().unwrapErr());
                     return;
                 }
 
@@ -203,7 +203,7 @@ namespace hyprload {
                 auto lock = std::unique_lock<std::mutex>(descriptor->m_mMutex);
 
                 descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err(
-                    "Failed to setup Hyprland headers");
+                    "Failed to setup Hyprland headers: " + g_bHeadersReady.value().unwrapErr());
                 return;
             }
 
@@ -271,7 +271,7 @@ namespace hyprload {
                     auto lock = std::unique_lock<std::mutex>(descriptor->m_mMutex);
 
                     descriptor->m_rResult = hyprload::Result<std::monostate, std::string>::err(
-                        "Failed to setup Hyprland headers");
+                        "Failed to setup Hyprland headers: " + g_bHeadersReady.value().unwrapErr());
                     return;
                 }
 
