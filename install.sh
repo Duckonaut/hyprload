@@ -53,6 +53,9 @@ else
 	git -C "$HYPRLAND_PATH" checkout "$HYPRLAND_COMMIT"
 fi
 
+info "Checking out Hyprland submodules"
+git -C "$HYPRLAND_PATH" submodule update --init --recursive
+
 if [ -z "$(ls -A $HYPRLAND_PATH)" ]; then
 	warn "ERROR: Hyprland was not cloned properly."
 	exit 1
