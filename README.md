@@ -36,7 +36,7 @@
 1. Install `hyprload`
     - `curl -sSL https://raw.githubusercontent.com/Duckonaut/hyprload/main/install.sh | bash`
 2. Add this to your config to initialize `hyprload`
-    - `exec-once=$HOME/.local/share/hyprload/hyprload.sh`
+    - `exec-once=$HOME/.local/share/hyprload/src/hyprload.sh`
 
 # Setup
 1. To have hyprload manage your plugin installation, create a `hyprload.toml` file (by default, next to your `hyprland.conf` config: `~/.config/hypr/hyprload.toml`
