@@ -198,9 +198,9 @@ namespace hyprload {
 
         int exit = pclose(pipe);
 
-        Debug::log(LOG, " [hyprload] Command: %s", command.c_str());
-        Debug::log(LOG, " [hyprload] Exit code: %d", exit);
-        Debug::log(LOG, " [hyprload] Result: %s", result.c_str());
+        Debug::log(LOG, " [hyprload] Command: {}", command.c_str());
+        Debug::log(LOG, " [hyprload] Exit code: {}", exit);
+        Debug::log(LOG, " [hyprload] Result: {}", result.c_str());
 
         return std::make_tuple(exit, result);
     }
